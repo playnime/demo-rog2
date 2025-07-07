@@ -4,11 +4,12 @@ import random
 import math
 from settings import *
 from player import Player
-from enemy import Enemy
+from enemy import BasicEnemy, FastEnemy, StrongEnemy, BossEnemy
 from map import Map
 from camera import Camera
 from attack import Attack
 from utils import draw_health_bar
+from upgrade_system import UpgradeManager
 
 pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -27,10 +28,14 @@ level_data = [
 class Game:
     def __init__(self):
         self.state = 'menu'  # 'menu' или 'playing'
+        self.upgrade_manager = UpgradeManager()
         self.reset_game()
         self.last_spawn_time = pygame.time.get_ticks()
         self.spawn_interval = 5000  # 5 секунд в миллисекундах
         self.spawn_distance = 200  # Расстояние от игрока для спавна
+        self.notification_text = ""
+        self.notification_time = 0
+        self.notification_duration = 3000  # 3 секунды
 
     def reset_game(self):
         self.all_sprites = pygame.sprite.Group()
@@ -38,11 +43,14 @@ class Game:
         self.player = Player(self, 3, 3)
         self.map = Map(self, level_data, "assets/tiles.png")
         self.camera = Camera(WIDTH, HEIGHT)
-        self.enemy = Enemy(self, 5, 5)
+        self.enemy = BasicEnemy(self, 5, 5)
         self.all_sprites.add(self.enemy)
         self.enemies.add(self.enemy)
         self.last_spawn_time = pygame.time.get_ticks()
         self.camera.update(self.player)
+        
+        # Сбрасываем систему прокачки
+        self.upgrade_manager = UpgradeManager()
 
     def spawn_enemy(self):
         # Генерируем случайный угол
@@ -54,10 +62,52 @@ class Game:
         spawn_x = self.player.x + distance * math.cos(angle)
         spawn_y = self.player.y + distance * math.sin(angle)
         
+        # Случайно выбираем тип врага
+        enemy_types = [BasicEnemy, FastEnemy, StrongEnemy, BossEnemy]
+        enemy_class = random.choice(enemy_types)
+        
         # Создаем врага в этой позиции
-        enemy = Enemy(self, spawn_x // TILE_SIZE, spawn_y // TILE_SIZE)
+        enemy = enemy_class(self, spawn_x // TILE_SIZE, spawn_y // TILE_SIZE)
         self.all_sprites.add(enemy)
         self.enemies.add(enemy)
+
+    def spawn_boss(self):
+        """Спавнит босса на 5-м уровне"""
+        # Генерируем позицию для босса (дальше от игрока)
+        angle = random.uniform(0, 2 * 3.14159)
+        distance = self.spawn_distance * 1.5  # Босс появляется дальше
+        
+        spawn_x = self.player.x + distance * math.cos(angle)
+        spawn_y = self.player.y + distance * math.sin(angle)
+        
+        # Создаем босса
+        boss = BossEnemy(self, spawn_x // TILE_SIZE, spawn_y // TILE_SIZE)
+        self.all_sprites.add(boss)
+        self.enemies.add(boss)
+        
+        # Показываем сообщение о появлении босса
+        self.show_notification("БОСС ПОЯВИЛСЯ!")
+
+    def show_notification(self, text):
+        """Показывает уведомление на экране"""
+        self.notification_text = text
+        self.notification_time = pygame.time.get_ticks()
+
+    def draw_notification(self, screen):
+        """Отрисовывает уведомление"""
+        if self.notification_text and pygame.time.get_ticks() - self.notification_time < self.notification_duration:
+            font = pygame.font.SysFont(None, 36)
+            text_surface = font.render(self.notification_text, True, (255, 0, 0))
+            text_rect = text_surface.get_rect(center=(WIDTH // 2, 100))
+            
+            # Фон для текста
+            bg_rect = text_rect.inflate(20, 10)
+            pygame.draw.rect(screen, (0, 0, 0), bg_rect)
+            pygame.draw.rect(screen, (255, 0, 0), bg_rect, 2)
+            
+            screen.blit(text_surface, text_rect)
+        elif self.notification_text:
+            self.notification_text = ""
 
     def run(self):
         running = True
@@ -73,11 +123,27 @@ class Game:
                 elif self.state == 'playing':
                     if event.type == pygame.KEYDOWN:
                         if event.key == pygame.K_SPACE:
-                            attack = Attack(self, self.player)
-                            self.all_sprites.add(attack)
+                            attack = self.player.attack()
+                            if attack:
+                                self.all_sprites.add(attack)
+                        
+                        # Обработка выбора улучшений
+                        if self.upgrade_manager.showing_upgrade_screen:
+                            if event.key == pygame.K_1:
+                                selected_upgrade = self.upgrade_manager.select_upgrade(0)
+                                if selected_upgrade:
+                                    self.upgrade_manager.apply_upgrade_to_player(self.player, selected_upgrade)
+                            elif event.key == pygame.K_2:
+                                selected_upgrade = self.upgrade_manager.select_upgrade(1)
+                                if selected_upgrade:
+                                    self.upgrade_manager.apply_upgrade_to_player(self.player, selected_upgrade)
+                            elif event.key == pygame.K_3:
+                                selected_upgrade = self.upgrade_manager.select_upgrade(2)
+                                if selected_upgrade:
+                                    self.upgrade_manager.apply_upgrade_to_player(self.player, selected_upgrade)
 
             # --- ВСЕГДА обновляем и отрисовываем сцену ---
-            if self.state == 'playing':
+            if self.state == 'playing' and not self.upgrade_manager.showing_upgrade_screen:
                 self.all_sprites.update()
                 # Спавн врагов каждые 5 секунд
                 current_time = pygame.time.get_ticks()
@@ -91,8 +157,15 @@ class Game:
             for sprite in self.all_sprites:
                 screen.blit(sprite.image, self.camera.apply(sprite))
 
-            draw_health_bar(screen, 10, 10, self.player.health, PLAYER_HEALTH)
-            draw_health_bar(screen, 10, 10, self.player.health, PLAYER_HEALTH)
+            # Отрисовка UI
+            draw_health_bar(screen, 10, 10, self.player.health, self.player.max_health)
+            self.upgrade_manager.draw_progress(screen)
+            
+            # Отрисовка экрана улучшений
+            self.upgrade_manager.draw_upgrade_screen(screen)
+            
+            # Отрисовка уведомлений
+            self.draw_notification(screen)
 
             # --- Если меню, рисуем затемнение и текст поверх ---
             if self.state == 'menu':
