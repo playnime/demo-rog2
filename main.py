@@ -25,11 +25,13 @@ level_data = [
 class Game:
     def __init__(self):
         self.all_sprites = pygame.sprite.Group()
+        self.enemies = pygame.sprite.Group()
         self.player = Player(self, 3, 3)
         self.map = Map(self, level_data, "assets/tiles.png")
         self.camera = Camera(WIDTH, HEIGHT)
         self.enemy = Enemy(self, 5, 5)  # начальная позиция врага
         self.all_sprites.add(self.enemy)
+        self.enemies.add(self.enemy)
 
     def run(self):
         running = True
@@ -40,7 +42,7 @@ class Game:
                     running = False
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_SPACE:
-                        attack = Attack(self.player)
+                        attack = Attack(self, self.player)
                         self.all_sprites.add(attack)
 
             self.all_sprites.update()

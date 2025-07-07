@@ -33,3 +33,8 @@ class Enemy(pygame.sprite.Sprite):
         # Проверка столкновения с игроком
         if self.rect.colliderect(self.game.player.rect):
             self.game.player.health -= 0.5  # Наносим маленький урон постепенно
+
+    def take_damage(self, amount):
+        self.health -= amount
+        if self.health <= 0:
+            self.kill()
