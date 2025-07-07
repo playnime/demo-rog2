@@ -85,16 +85,16 @@ class Enemy(pygame.sprite.Sprite):
 # Типы врагов
 class BasicEnemy(Enemy):
     def __init__(self, game, x, y):
-        super().__init__(game, x, y, "assets/enemy.png", 1.5, 50, 10, 500, (255, 255, 255))  # Обычный (белый оттенок)
+        super().__init__(game, x, y, "assets/basic_gryavol.png", 1.5, 50, 10, 500, (255, 255, 255))  # Обычный (белый оттенок)
 
 class FastEnemy(Enemy):
     def __init__(self, game, x, y):
-        super().__init__(game, x, y, "assets/enemy.png", 3.0, 30, 5, 300, (100, 255, 100))  # Зеленый оттенок
+        super().__init__(game, x, y, "assets/basic_gryavol.png", 3.0, 30, 5, 300, (100, 255, 100))  # Зеленый оттенок
 
 class StrongEnemy(Enemy):
     def __init__(self, game, x, y):
-        super().__init__(game, x, y, "assets/enemy.png", 0.8, 100, 20, 800, (255, 100, 100))  # Красный оттенок
+        super().__init__(game, x, y, "assets/basic_gryavol.png", 0.8, 100, 20, 800, (255, 100, 100))  # Красный оттенок
 
 class BossEnemy(Enemy):
     def __init__(self, game, x, y):
-        super().__init__(game, x, y, "assets/enemy2.png", 1.2, 200, 30, 1000)  # Босс (без оттенка)
+        super().__init__(game, x, y, "assets/basic_yeti.png", 1.2, 200, 30, 1000)  # Босс (без оттенка)
