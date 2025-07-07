@@ -4,7 +4,7 @@ import random
 import math
 from settings import *
 from player import Player
-from enemy import Enemy
+from enemy import BasicEnemy, FastEnemy, StrongEnemy, BossEnemy
 from map import Map
 from camera import Camera
 from attack import Attack
@@ -38,7 +38,7 @@ class Game:
         self.player = Player(self, 3, 3)
         self.map = Map(self, level_data, "assets/tiles.png")
         self.camera = Camera(WIDTH, HEIGHT)
-        self.enemy = Enemy(self, 5, 5)
+        self.enemy = BasicEnemy(self, 5, 5)
         self.all_sprites.add(self.enemy)
         self.enemies.add(self.enemy)
         self.last_spawn_time = pygame.time.get_ticks()
@@ -54,8 +54,12 @@ class Game:
         spawn_x = self.player.x + distance * math.cos(angle)
         spawn_y = self.player.y + distance * math.sin(angle)
         
+        # Случайно выбираем тип врага
+        enemy_types = [BasicEnemy, FastEnemy, StrongEnemy, BossEnemy]
+        enemy_class = random.choice(enemy_types)
+        
         # Создаем врага в этой позиции
-        enemy = Enemy(self, spawn_x // TILE_SIZE, spawn_y // TILE_SIZE)
+        enemy = enemy_class(self, spawn_x // TILE_SIZE, spawn_y // TILE_SIZE)
         self.all_sprites.add(enemy)
         self.enemies.add(enemy)
 

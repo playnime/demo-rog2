@@ -4,8 +4,7 @@ from tilemap import load_tilemap
 
 class Tile(pygame.sprite.Sprite):
     def __init__(self, game, x, y, image):
-        self.groups = game.all_sprites
-        super().__init__(self.groups)
+        super().__init__(game.all_sprites)
         self.image = image
         self.rect = self.image.get_rect()
         self.rect.x = x * TILE_SIZE
