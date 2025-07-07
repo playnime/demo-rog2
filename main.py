@@ -2,6 +2,7 @@ import pygame
 import sys
 from settings import *
 from player import Player
+from enemy import Enemy
 from map import Map
 from camera import Camera
 from attack import Attack
@@ -27,6 +28,8 @@ class Game:
         self.player = Player(self, 3, 3)
         self.map = Map(self, level_data, "assets/tiles.png")
         self.camera = Camera(WIDTH, HEIGHT)
+        self.enemy = Enemy(self, 5, 5)  # начальная позиция врага
+        self.all_sprites.add(self.enemy)
 
     def run(self):
         running = True
@@ -48,6 +51,7 @@ class Game:
             for sprite in self.all_sprites:
                 screen.blit(sprite.image, self.camera.apply(sprite))
 
+            draw_health_bar(screen, 10, 10, self.player.health, PLAYER_HEALTH)
             draw_health_bar(screen, 10, 10, self.player.health, PLAYER_HEALTH)
 
             pygame.display.flip()
