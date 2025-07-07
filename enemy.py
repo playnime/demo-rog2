@@ -14,6 +14,7 @@ class Enemy(pygame.sprite.Sprite):
         self.y = y * TILE_SIZE
         self.speed = 1.5
         self.health = 50
+        self.last_attack_time = 0  # Для задержки урона
 
     def update(self):
         # Простое поведение: двигаемся к игроку
@@ -24,15 +25,33 @@ class Enemy(pygame.sprite.Sprite):
         dx = dx / dist
         dy = dy / dist
 
+        old_x, old_y = self.x, self.y
         self.x += dx * self.speed
         self.y += dy * self.speed
 
         self.rect.x = int(self.x)
         self.rect.y = int(self.y)
 
-        # Проверка столкновения с игроком
+        # Проверка столкновения с другими врагами
+        for other in self.game.enemies:
+            if other is not self and self.rect.colliderect(other.rect):
+                self.x, self.y = old_x, old_y
+                self.rect.x = int(self.x)
+                self.rect.y = int(self.y)
+                break
+
+        # Проверка столкновения с игроком для урона
         if self.rect.colliderect(self.game.player.rect):
-            self.game.player.health -= 0.5  # Наносим маленький урон постепенно
+            now = pygame.time.get_ticks()
+            if now - self.last_attack_time > 500:  # 0.5 секунды
+                self.game.player.health -= 10
+                self.last_attack_time = now
+
+        # Проверка столкновения с игроком (не даём проходить сквозь)
+        if self.rect.colliderect(self.game.player.rect):
+            self.x, self.y = old_x, old_y
+            self.rect.x = int(self.x)
+            self.rect.y = int(self.y)
 
     def take_damage(self, amount):
         self.health -= amount
