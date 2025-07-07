@@ -68,7 +68,7 @@ class Enemy(pygame.sprite.Sprite):
         if self.rect.colliderect(self.game.player.rect):
             now = pygame.time.get_ticks()
             if now - self.last_attack_time > self.attack_cooldown:
-                self.game.player.health -= self.damage
+                self.game.player.take_damage(self.damage)
                 self.last_attack_time = now
 
         # Проверка столкновения с игроком (не даём проходить сквозь)
