@@ -3,14 +3,15 @@ from settings import *
 
 class Player(pygame.sprite.Sprite):
     def __init__(self, game, x, y):
-        self.groups = game.all_sprites
-        super().__init__(self.groups)
+        super().__init__(game.all_sprites)
         self.game = game
         self.image = pygame.Surface((TILE_SIZE, TILE_SIZE))
         self.image.fill(WHITE)
         self.rect = self.image.get_rect()
         self.x = x * TILE_SIZE
         self.y = y * TILE_SIZE
+        self.rect.x = self.x
+        self.rect.y = self.y
         self.health = PLAYER_HEALTH
 
     def move(self, dx=0, dy=0):
