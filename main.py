@@ -15,16 +15,6 @@ pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
 
-# Уровень (пример)
-level_data = [
-    [0, 0, 0, 0, 0, 0, 0, 0],
-    [0, -1, -1, -1, -1, -1, -1, 0],
-    [0, -1, -1, -1, -1, -1, -1, 0],
-    [0, -1, -1, -1, -1, -1, -1, 0],
-    [0, -1, -1, -1, -1, -1, -1, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0],
-]
-
 class Game:
     def __init__(self):
         self.state = 'menu'  # 'menu' или 'playing'
@@ -40,15 +30,29 @@ class Game:
     def reset_game(self):
         self.all_sprites = pygame.sprite.Group()
         self.enemies = pygame.sprite.Group()
-        self.player = Player(self, 3, 3)
-        self.map = Map(self, level_data, "assets/tiles.png")
+        # Получаем размеры карты (по умолчанию 8x6)
+        map_width, map_height = 8, 6
+        if hasattr(self, 'map') and hasattr(self.map, 'width') and hasattr(self.map, 'height'):
+            map_width = self.map.width
+            map_height = self.map.height
+        elif hasattr(self, 'map') and hasattr(self.map, 'tiles') and self.map.tiles:
+            # Если есть тайлы, определяем размеры по ним
+            max_x = max(tile.rect.x for tile in self.map.tiles) // TILE_SIZE
+            max_y = max(tile.rect.y for tile in self.map.tiles) // TILE_SIZE
+            map_width = max_x + 1
+            map_height = max_y + 1
+        # Центр карты
+        player_x = map_width // 2
+        player_y = map_height // 2
+        self.player = Player(self, player_x, player_y)
+        # Загружаем карту из Lua файла
+        self.map = Map(self, lua_map_path="assets/map.lua")
         self.camera = Camera(WIDTH, HEIGHT)
         self.enemy = BasicEnemy(self, 5, 5)
         self.all_sprites.add(self.enemy)
         self.enemies.add(self.enemy)
         self.last_spawn_time = pygame.time.get_ticks()
         self.camera.update(self.player)
-        
         # Сбрасываем систему прокачки
         self.upgrade_manager = UpgradeManager()
 
@@ -154,8 +158,15 @@ class Game:
             self.camera.update(self.player)
 
             screen.fill((0, 0, 0))
+            # Сначала рисуем тайлы карты
+            for tile in self.map.tiles:
+                screen.blit(tile.image, self.camera.apply(tile))
+            # Затем рисуем всех спрайтов, кроме игрока
             for sprite in self.all_sprites:
-                screen.blit(sprite.image, self.camera.apply(sprite))
+                if sprite is not self.player:
+                    screen.blit(sprite.image, self.camera.apply(sprite))
+            # В самом конце рисуем игрока поверх всех
+            screen.blit(self.player.image, self.camera.apply(self.player))
 
             # Отрисовка UI
             draw_health_bar(screen, 10, 10, self.player.health, self.player.max_health)
