@@ -25,7 +25,7 @@ class Game:
     def __init__(self):
         self.all_sprites = pygame.sprite.Group()
         self.player = Player(self, 3, 3)
-        self.map = Map(self, level_data, "GAME/roguelike/assets/tiles.png")
+        self.map = Map(self, level_data, "assets/tiles.png")
         self.camera = Camera(WIDTH, HEIGHT)
 
     def run(self):
