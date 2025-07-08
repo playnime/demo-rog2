@@ -1,5 +1,7 @@
 import pygame
 from settings import *
+import random
+import math
 
 def create_enemy_image(color, size=TILE_SIZE):
     """Creates an enemy image of the given color"""
@@ -39,6 +41,10 @@ class Enemy(pygame.sprite.Sprite):
         self.damage = damage
         self.attack_cooldown = attack_cooldown
         self.last_attack_time = 0
+        # Flash effect
+        self.flash_time = 0
+        self.flash_duration = 100  # ms
+        self.base_image = self.image.copy()
 
     def update(self):
         # Simple behavior: move toward player
@@ -86,8 +92,20 @@ class Enemy(pygame.sprite.Sprite):
             self.rect.x = int(self.x)
             self.rect.y = int(self.y)
 
+        # Flash effect update
+        if self.flash_time > 0:
+            if pygame.time.get_ticks() - self.flash_time < self.flash_duration:
+                self.image.fill((255, 255, 255))
+            else:
+                self.image = self.base_image.copy()
+                self.flash_time = 0
+
     def take_damage(self, amount):
         self.health -= amount
+        # Flash effect
+        self.flash_time = pygame.time.get_ticks()
+        # Damage number
+        DamageNumber.spawn(self.game, self.rect.centerx, self.rect.top, amount)
         if self.health <= 0:
             self.kill()
 
@@ -107,3 +125,33 @@ class StrongEnemy(Enemy):
 class BossEnemy(Enemy):
     def __init__(self, game, x, y):
         super().__init__(game, x, y, "assets/basic_yeti.png", 1.2, 200, 30, 1000)  # Boss (no tint)
+
+class DamageNumber(pygame.sprite.Sprite):
+    def __init__(self, game, x, y, value):
+        super().__init__(game.all_sprites)
+        self.game = game
+        self.value = value
+        self.font = pygame.font.SysFont(None, 28)
+        self.image = self.font.render(str(value), True, (255, 220, 80))
+        self.rect = self.image.get_rect(center=(x, y))
+        # Случайное направление
+        angle = random.uniform(-0.7, 0.7)
+        speed = random.uniform(2, 4)
+        self.vx = math.cos(angle) * speed
+        self.vy = -abs(math.sin(angle)) * speed - 1  # всегда вверх
+        self.spawn_time = pygame.time.get_ticks()
+        self.lifetime = 700  # ms
+    def update(self):
+        self.rect.x += int(self.vx)
+        self.rect.y += int(self.vy)
+        # Fade out
+        elapsed = pygame.time.get_ticks() - self.spawn_time
+        if elapsed > self.lifetime:
+            self.kill()
+        else:
+            alpha = max(0, 255 - int(255 * (elapsed / self.lifetime)))
+            self.image.set_alpha(alpha)
+    @staticmethod
+    def spawn(game, x, y, value):
+        dmg = DamageNumber(game, x, y, value)
+        game.all_sprites.add(dmg)
