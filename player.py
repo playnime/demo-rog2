@@ -2,18 +2,36 @@ import pygame
 from settings import *
 import random
 from attack import Attack, SwingAttack
+import os
 
 class Player(pygame.sprite.Sprite):
     def __init__(self, game, x, y):
         super().__init__()
         self.game = game
-        self.image = pygame.Surface((TILE_SIZE, TILE_SIZE))
-        self.image.fill(WHITE)
+        # --- Анимация кролика ---
+        # Загружаем кадры анимации ходьбы вправо
+        self.walk_right_frames = [
+            pygame.image.load(os.path.join("assets", "bunny", "bunny_walk1.png")).convert_alpha(),
+            pygame.image.load(os.path.join("assets", "bunny", "bunny_walk2.png")).convert_alpha(),
+            pygame.image.load(os.path.join("assets", "bunny", "bunny_walk3.png")).convert_alpha(),
+        ]
+        # Создаём зеркальные кадры для ходьбы влево
+        self.walk_left_frames = [
+            pygame.transform.flip(frame, True, False) for frame in self.walk_right_frames
+        ]
+        # Начальный кадр
+        self.image = self.walk_right_frames[0]
         self.rect = self.image.get_rect()
         self.x = x * TILE_SIZE
         self.y = y * TILE_SIZE
         self.rect.x = self.x
         self.rect.y = self.y
+        # Переменные анимации
+        self.current_frame = 0
+        self.animation_timer = 0
+        self.animation_speed = 0.12  # секунд на кадр
+        self.direction = "right"  # "right" или "left"
+        self.is_moving = False
         
         # Base attributes
         self.max_health = PLAYER_HEALTH
@@ -55,14 +73,38 @@ class Player(pygame.sprite.Sprite):
 
     def update(self):
         keys = pygame.key.get_pressed()
+        dx, dy = 0, 0
         if keys[pygame.K_w]:
-            self.move(dy=-1)
+            dy = -1
         if keys[pygame.K_s]:
-            self.move(dy=1)
+            dy = 1
         if keys[pygame.K_a]:
-            self.move(dx=-1)
+            dx = -1
         if keys[pygame.K_d]:
-            self.move(dx=1)
+            dx = 1
+        self.is_moving = dx != 0 or dy != 0
+        # Определяем направление
+        if dx > 0:
+            self.direction = "right"
+        elif dx < 0:
+            self.direction = "left"
+        # Движение
+        if self.is_moving:
+            self.move(dx, dy)
+        # --- Анимация ---
+        dt = 1 / 60  # Предполагаем 60 FPS, если dt не передаётся
+        self.animation_timer += dt if self.is_moving else 0
+        if self.is_moving and self.animation_timer >= self.animation_speed:
+            self.animation_timer = 0
+            self.current_frame = (self.current_frame + 1) % len(self.walk_right_frames)
+        # Выбор кадра
+        if self.direction == "right":
+            self.image = self.walk_right_frames[self.current_frame] if self.is_moving else self.walk_right_frames[0]
+        else:
+            self.image = self.walk_left_frames[self.current_frame] if self.is_moving else self.walk_left_frames[0]
+        # Обновляем позицию rect
+        self.rect.x = self.x
+        self.rect.y = self.y
     
     def take_damage(self, amount):
         """Take damage with dodge chance"""
