@@ -15,38 +15,38 @@ class Player(pygame.sprite.Sprite):
         self.rect.x = self.x
         self.rect.y = self.y
         
-        # Базовые характеристики
+        # Base attributes
         self.max_health = PLAYER_HEALTH
         self.health = self.max_health
         self.speed = PLAYER_SPEED
         self.attack_damage = 20
-        self.attack_cooldown = 500  # миллисекунды
+        self.attack_cooldown = 500  # milliseconds
         self.attack_size_multiplier = 1.0
         
-        # Специальные способности
+        # Special abilities
         self.vampirism = 0
         self.critical_chance = 0
         self.dodge_chance = 0
         self.explosive_attack = False
         
-        # Время последней атаки
+        # Last attack time
         self.last_attack_time = 0
 
     def move(self, dx=0, dy=0):
         new_x = self.x + dx * self.speed
         new_y = self.y + dy * self.speed
 
-        # Получаем размеры карты в тайлах
+        # Get map size in tiles
         map_width = self.game.map.width
         map_height = self.game.map.height
 
-        # Проверяем границы (в пикселях)
+        # Check boundaries (in pixels)
         min_x = 0
         min_y = 0
         max_x = (map_width - 1) * TILE_SIZE
         max_y = (map_height - 1) * TILE_SIZE
 
-        # Ограничиваем координаты
+        # Clamp coordinates
         if min_x <= new_x <= max_x:
             self.x = new_x
         if min_y <= new_y <= max_y:
@@ -67,45 +67,45 @@ class Player(pygame.sprite.Sprite):
             self.move(dx=1)
     
     def take_damage(self, amount):
-        """Получение урона с учетом уклонения"""
+        """Take damage with dodge chance"""
         if random.random() < self.dodge_chance:
-            return  # Уклонение от атаки
+            return  # Dodge the attack
         self.health -= amount
         self.health = max(0, self.health)
     
     def heal(self, amount):
-        """Восстановление здоровья"""
+        """Restore health"""
         self.health = min(self.health + amount, self.max_health)
     
     def on_kill_enemy(self):
-        """Вызывается при убийстве врага"""
-        # Вампиризм
+        """Called when an enemy is killed"""
+        # Vampirism
         if self.vampirism > 0:
             self.heal(self.vampirism)
     
     def can_attack(self):
-        """Проверяет, может ли игрок атаковать"""
+        """Check if player can attack"""
         current_time = pygame.time.get_ticks()
         return current_time - self.last_attack_time >= self.attack_cooldown
     
     def attack(self):
-        """Выполняет атаку"""
+        """Perform attack"""
         if not self.can_attack():
             return None
         
         self.last_attack_time = pygame.time.get_ticks()
         
-        # Создаем атаку с учетом улучшений
+        # Create attack with upgrades
         attack = Attack(self.game, self)
         
-        # Применяем критический удар
+        # Apply critical hit
         if random.random() < self.critical_chance:
             attack.damage *= 2
         
-        # Применяем размер атаки
+        # Apply attack size
         attack.size_multiplier = self.attack_size_multiplier
         
-        # Применяем взрывную атаку
+        # Apply explosive attack
         if self.explosive_attack:
             attack.explosive = True
         

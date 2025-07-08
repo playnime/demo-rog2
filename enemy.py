@@ -2,17 +2,17 @@ import pygame
 from settings import *
 
 def create_enemy_image(color, size=TILE_SIZE):
-    """Создает изображение врага заданного цвета"""
+    """Creates an enemy image of the given color"""
     image = pygame.Surface((size, size))
     image.fill(color)
-    # Добавляем простые детали
-    pygame.draw.circle(image, (255, 255, 255), (size//4, size//4), size//8)  # глаз
-    pygame.draw.circle(image, (255, 255, 255), (3*size//4, size//4), size//8)  # глаз
-    pygame.draw.rect(image, (100, 0, 0), (size//3, 2*size//3, size//3, size//6))  # рот
+    # Add simple details
+    pygame.draw.circle(image, (255, 255, 255), (size//4, size//4), size//8)  # eye
+    pygame.draw.circle(image, (255, 255, 255), (3*size//4, size//4), size//8)  # eye
+    pygame.draw.rect(image, (100, 0, 0), (size//3, 2*size//3, size//3, size//6))  # mouth
     return image
 
 def tint_image(image, color):
-    """Изменяет оттенок изображения"""
+    """Changes the hue of the image"""
     tinted = image.copy()
     tinted.fill(color, special_flags=pygame.BLEND_MULT)
     return tinted
@@ -28,7 +28,7 @@ class Enemy(pygame.sprite.Sprite):
             if tint_color:
                 self.image = tint_image(self.image, tint_color)
         else:
-            # Если передается цвет, создаем изображение
+            # If color is provided, create image
             self.image = create_enemy_image(image_path)
         
         self.rect = self.image.get_rect()
@@ -41,7 +41,7 @@ class Enemy(pygame.sprite.Sprite):
         self.last_attack_time = 0
 
     def update(self):
-        # Простое поведение: двигаемся к игроку
+        # Simple behavior: move toward player
         dx = self.game.player.x - self.x
         dy = self.game.player.y - self.y
         dist = max(1, (dx**2 + dy**2)**0.5)
@@ -56,31 +56,31 @@ class Enemy(pygame.sprite.Sprite):
         self.rect.x = int(self.x)
         self.rect.y = int(self.y)
 
-        # Мягкое выталкивание при столкновении с другими врагами
+        # Soft push when colliding with other enemies
         for other in self.game.enemies:
             if other is not self and self.rect.colliderect(other.rect):
-                # Вектор между центрами
+                # Vector between centers
                 ox, oy = other.rect.centerx, other.rect.centery
                 sx, sy = self.rect.centerx, self.rect.centery
                 vec_x = sx - ox
                 vec_y = sy - oy
                 dist = max(1, (vec_x**2 + vec_y**2)**0.5)
-                # Сдвигаем на небольшое расстояние (например, 2 пикселя)
+                # Move by a small distance (e.g., 2 pixels)
                 push_strength = 2
                 self.x += (vec_x / dist) * push_strength
                 self.y += (vec_y / dist) * push_strength
                 self.rect.x = int(self.x)
                 self.rect.y = int(self.y)
-                # Можно добавить: other тоже немного сдвигать, если хочется более плавно
+                # Optionally: also move 'other' a bit for smoother effect
 
-        # Проверка столкновения с игроком для урона
+        # Check collision with player for damage
         if self.rect.colliderect(self.game.player.rect):
             now = pygame.time.get_ticks()
             if now - self.last_attack_time > self.attack_cooldown:
                 self.game.player.take_damage(self.damage)
                 self.last_attack_time = now
 
-        # Проверка столкновения с игроком (не даём проходить сквозь)
+        # Check collision with player (don't allow passing through)
         if self.rect.colliderect(self.game.player.rect):
             self.x, self.y = old_x, old_y
             self.rect.x = int(self.x)
@@ -91,19 +91,19 @@ class Enemy(pygame.sprite.Sprite):
         if self.health <= 0:
             self.kill()
 
-# Типы врагов
+# Enemy types
 class BasicEnemy(Enemy):
     def __init__(self, game, x, y):
-        super().__init__(game, x, y, "assets/basic_gryavol.png", 1.5, 50, 10, 500, (255, 255, 255))  # Обычный (белый оттенок)
+        super().__init__(game, x, y, "assets/basic_gryavol.png", 1.5, 50, 10, 500, (255, 255, 255))  # Normal (white tint)
 
 class FastEnemy(Enemy):
     def __init__(self, game, x, y):
-        super().__init__(game, x, y, "assets/basic_gryavol.png", 3.0, 30, 5, 300, (100, 255, 100))  # Зеленый оттенок
+        super().__init__(game, x, y, "assets/basic_gryavol.png", 3.0, 30, 5, 300, (100, 255, 100))  # Green tint
 
 class StrongEnemy(Enemy):
     def __init__(self, game, x, y):
-        super().__init__(game, x, y, "assets/basic_gryavol.png", 0.8, 100, 20, 800, (255, 100, 100))  # Красный оттенок
+        super().__init__(game, x, y, "assets/basic_gryavol.png", 0.8, 100, 20, 800, (255, 100, 100))  # Red tint
 
 class BossEnemy(Enemy):
     def __init__(self, game, x, y):
-        super().__init__(game, x, y, "assets/basic_yeti.png", 1.2, 200, 30, 1000)  # Босс (без оттенка)
+        super().__init__(game, x, y, "assets/basic_yeti.png", 1.2, 200, 30, 1000)  # Boss (no tint)

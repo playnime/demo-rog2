@@ -13,11 +13,11 @@ class Upgrade:
     
     def get_rarity_color(self):
         colors = {
-            "common": (200, 200, 200),    # Серый
-            "uncommon": (100, 255, 100),  # Зеленый
-            "rare": (100, 100, 255),      # Синий
-            "epic": (200, 100, 255),      # Фиолетовый
-            "legendary": (255, 200, 100)  # Оранжевый
+            "common": (200, 200, 200),    # Gray
+            "uncommon": (100, 255, 100),  # Green
+            "rare": (100, 100, 255),      # Blue
+            "epic": (200, 100, 255),      # Purple
+            "legendary": (255, 200, 100)  # Orange
         }
         return colors.get(self.rarity, (200, 200, 200))
 
@@ -33,38 +33,33 @@ class UpgradeManager:
         self.boss_spawned = False
         
     def create_upgrade_pool(self):
-        """Создает пул всех возможных улучшений"""
+        """Creates the pool of all possible upgrades"""
         upgrades = [
-            # Улучшения здоровья
-            Upgrade("Железное Сердце", "Увеличивает максимальное здоровье на 25", "max_health", 25, "common"),
-            Upgrade("Титановое Сердце", "Увеличивает максимальное здоровье на 50", "max_health", 50, "uncommon"),
-            Upgrade("Божественное Сердце", "Увеличивает максимальное здоровье на 100", "max_health", 100, "rare"),
-            
-            # Улучшения скорости
-            Upgrade("Быстрые Ноги", "Увеличивает скорость движения на 0.5", "speed", 0.5, "common"),
-            Upgrade("Скорость Ветра", "Увеличивает скорость движения на 1.0", "speed", 1.0, "uncommon"),
-            Upgrade("Молния", "Увеличивает скорость движения на 2.0", "speed", 2.0, "rare"),
-            
-            # Улучшения атаки
-            Upgrade("Острый Меч", "Увеличивает урон атаки на 5", "attack_damage", 5, "common"),
-            Upgrade("Кровавый Клинок", "Увеличивает урон атаки на 10", "attack_damage", 10, "uncommon"),
-            Upgrade("Экскалибур", "Увеличивает урон атаки на 20", "attack_damage", 20, "rare"),
-            
-            # Улучшения скорости атаки
-            Upgrade("Быстрая Рука", "Уменьшает задержку атаки на 100мс", "attack_speed", 100, "common"),
-            Upgrade("Мастер Меча", "Уменьшает задержку атаки на 200мс", "attack_speed", 200, "uncommon"),
-            Upgrade("Берсерк", "Уменьшает задержку атаки на 300мс", "attack_speed", 300, "rare"),
-            
-            # Улучшения размера атаки
-            Upgrade("Длинный Меч", "Увеличивает размер атаки на 10%", "attack_size", 0.1, "common"),
-            Upgrade("Гигантский Клинок", "Увеличивает размер атаки на 20%", "attack_size", 0.2, "uncommon"),
-            Upgrade("Космический Меч", "Увеличивает размер атаки на 50%", "attack_size", 0.5, "rare"),
-            
-            # Специальные улучшения
-            Upgrade("Вампиризм", "Восстанавливает 5 здоровья за убийство", "vampirism", 5, "epic"),
-            Upgrade("Критический Удар", "20% шанс нанести двойной урон", "critical_chance", 0.2, "epic"),
-            Upgrade("Бессмертие", "Шанс 10% не получить урон при атаке", "dodge_chance", 0.1, "legendary"),
-            Upgrade("Взрывная Атака", "Атаки взрываются, нанося урон врагам поблизости", "explosive_attack", 1, "legendary"),
+            # Health upgrades
+            Upgrade("Iron Heart", "Increases max health by 25", "max_health", 25, "common"),
+            Upgrade("Titanium Heart", "Increases max health by 50", "max_health", 50, "uncommon"),
+            Upgrade("Divine Heart", "Increases max health by 100", "max_health", 100, "rare"),
+            # Speed upgrades
+            Upgrade("Fast Legs", "Increases movement speed by 0.5", "speed", 0.5, "common"),
+            Upgrade("Wind Speed", "Increases movement speed by 1.0", "speed", 1.0, "uncommon"),
+            Upgrade("Lightning", "Increases movement speed by 2.0", "speed", 2.0, "rare"),
+            # Attack upgrades
+            Upgrade("Sharp Sword", "Increases attack damage by 5", "attack_damage", 5, "common"),
+            Upgrade("Bloody Blade", "Increases attack damage by 10", "attack_damage", 10, "uncommon"),
+            Upgrade("Excalibur", "Increases attack damage by 20", "attack_damage", 20, "rare"),
+            # Attack speed upgrades
+            Upgrade("Quick Hand", "Reduces attack delay by 100ms", "attack_speed", 100, "common"),
+            Upgrade("Sword Master", "Reduces attack delay by 200ms", "attack_speed", 200, "uncommon"),
+            Upgrade("Berserk", "Reduces attack delay by 300ms", "attack_speed", 300, "rare"),
+            # Attack size upgrades
+            Upgrade("Long Sword", "Increases attack size by 10%", "attack_size", 0.1, "common"),
+            Upgrade("Giant Blade", "Increases attack size by 20%", "attack_size", 0.2, "uncommon"),
+            Upgrade("Cosmic Sword", "Increases attack size by 50%", "attack_size", 0.5, "rare"),
+            # Special upgrades
+            Upgrade("Vampirism", "Restores 5 health per kill", "vampirism", 5, "epic"),
+            Upgrade("Critical Strike", "20% chance to deal double damage", "critical_chance", 0.2, "epic"),
+            Upgrade("Immortality", "10% chance to avoid damage when hit", "dodge_chance", 0.1, "legendary"),
+            Upgrade("Explosive Attack", "Attacks explode, damaging nearby enemies", "explosive_attack", 1, "legendary"),
         ]
         return upgrades
     

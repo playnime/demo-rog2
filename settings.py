@@ -1,16 +1,16 @@
 import pygame
 
-# Основные настройки
+# Main settings
 WIDTH, HEIGHT = 1280, 720
 FPS = 60
 TILE_SIZE = 32
 
-# Цвета
+# Colors
 WHITE = (255, 255, 255)
 
-# Игрок
+# Player
 PLAYER_SPEED = 3
 PLAYER_HEALTH = 100
 
-# Камера
+# Camera
 CAMERA_OFFSET = (0, 0)

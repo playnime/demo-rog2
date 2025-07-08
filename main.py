@@ -14,7 +14,7 @@ from upgrade_system import UpgradeManager
 pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 fullscreen = False
-# Surface для игрового поля
+# Surface for the game field
 GAME_SIZE = (WIDTH, HEIGHT)
 game_surface = pygame.Surface(GAME_SIZE)
 
@@ -36,35 +36,35 @@ def get_scale():
 
 class Game:
     def __init__(self):
-        self.state = 'menu'  # 'menu' или 'playing'
+        self.state = 'menu'  # 'menu' or 'playing'
         self.upgrade_manager = UpgradeManager()
         self.reset_game()
         self.last_spawn_time = pygame.time.get_ticks()
-        self.spawn_interval = 5000  # 5 секунд в миллисекундах
-        self.spawn_distance = 200  # Расстояние от игрока для спавна
+        self.spawn_interval = 5000  # 5 seconds in milliseconds
+        self.spawn_distance = 200  # Distance from player for spawning
         self.notification_text = ""
         self.notification_time = 0
-        self.notification_duration = 3000  # 3 секунды
+        self.notification_duration = 3000  # 3 seconds
 
     def reset_game(self):
         self.all_sprites = pygame.sprite.Group()
         self.enemies = pygame.sprite.Group()
-        # Получаем размеры карты (по умолчанию 8x6)
+        # Get map size (default 8x6)
         map_width, map_height = 8, 6
         if hasattr(self, 'map') and hasattr(self.map, 'width') and hasattr(self.map, 'height'):
             map_width = self.map.width
             map_height = self.map.height
         elif hasattr(self, 'map') and hasattr(self.map, 'tiles') and self.map.tiles:
-            # Если есть тайлы, определяем размеры по ним
+            # If there are tiles, determine size by them
             max_x = max(tile.rect.x for tile in self.map.tiles) // TILE_SIZE
             max_y = max(tile.rect.y for tile in self.map.tiles) // TILE_SIZE
             map_width = max_x + 1
             map_height = max_y + 1
-        # Центр карты
+        # Center of the map
         player_x = map_width // 2
         player_y = map_height // 2
         self.player = Player(self, player_x, player_y)
-        # Загружаем карту из Lua файла
+        # Load map from Lua file
         self.map = Map(self, lua_map_path="assets/map.lua")
         self.camera = Camera(WIDTH, HEIGHT)
         self.enemy = BasicEnemy(self, 5, 5)
@@ -72,24 +72,24 @@ class Game:
         self.enemies.add(self.enemy)
         self.last_spawn_time = pygame.time.get_ticks()
         self.camera.update(self.player)
-        # Сбрасываем систему прокачки
+        # Reset upgrade system
         self.upgrade_manager = UpgradeManager()
 
     def spawn_enemy(self):
-        # Генерируем случайный угол
+        # Generate random angle
         angle = random.uniform(0, 2 * 3.14159)
-        # Генерируем случайное расстояние в пределах spawn_distance
+        # Generate random distance within spawn_distance
         distance = random.uniform(100, self.spawn_distance)
         
-        # Вычисляем позицию относительно игрока
+        # Calculate position relative to player
         spawn_x = self.player.x + distance * math.cos(angle)
         spawn_y = self.player.y + distance * math.sin(angle)
         
-        # Случайно выбираем тип врага
-        enemy_types = [BasicEnemy, FastEnemy, StrongEnemy]  # BossEnemy убран
+        # Randomly select enemy type
+        enemy_types = [BasicEnemy, FastEnemy, StrongEnemy]  # BossEnemy removed
         enemy_class = random.choice(enemy_types)
         
-        # Создаем врага в этой позиции
+        # Create enemy at this position
         enemy = enemy_class(self, spawn_x // TILE_SIZE, spawn_y // TILE_SIZE)
         self.all_sprites.add(enemy)
         self.enemies.add(enemy)
@@ -108,7 +108,7 @@ class Game:
         self.show_notification("BOSS APPEARED!")
 
     def show_notification(self, text):
-        """Показывает уведомление на экране"""
+        """Shows notification on the screen"""
         self.notification_text = text
         self.notification_time = pygame.time.get_ticks()
 
@@ -146,7 +146,7 @@ class Game:
                             if attack:
                                 self.all_sprites.add(attack)
                         
-                        # Обработка выбора улучшений
+                        # Handle upgrade selection
                         if self.upgrade_manager.showing_upgrade_screen:
                             if event.key == pygame.K_1:
                                 selected_upgrade = self.upgrade_manager.select_upgrade(0)
@@ -161,12 +161,12 @@ class Game:
                                 if selected_upgrade:
                                     self.upgrade_manager.apply_upgrade_to_player(self.player, selected_upgrade)
 
-            # --- ВСЕГДА обновляем и отрисовываем сцену ---
+            # --- ALWAYS update and draw the scene ---
             if self.state == 'playing' and not self.upgrade_manager.showing_upgrade_screen:
                 self.all_sprites.update()
-                # Спавн врагов: интервал уменьшается с уровнем
+                # Enemy spawn: interval decreases with level
                 current_time = pygame.time.get_ticks()
-                # Новый интервал: минимум 1 секунда
+                # New interval: minimum 1 second
                 level = self.upgrade_manager.level
                 self.spawn_interval = max(1000, 5000 - (level - 1) * 400)
                 if current_time - self.last_spawn_time > self.spawn_interval:
@@ -175,12 +175,12 @@ class Game:
 
             self.camera.update(self.player)
 
-            # Всё рисуем на game_surface
+            # Draw everything on game_surface
             game_surface.fill((0, 0, 0))
-            # Карта
+            # Map
             for tile in self.map.tiles:
                 game_surface.blit(tile.image, self.camera.apply(tile))
-            # Спрайты
+            # Sprites
             for sprite in self.all_sprites:
                 if sprite is not self.player:
                     game_surface.blit(sprite.image, self.camera.apply(sprite))
@@ -190,14 +190,14 @@ class Game:
             self.upgrade_manager.draw_progress(game_surface)
             self.upgrade_manager.draw_upgrade_screen(game_surface)
             self.draw_notification(game_surface)
-            # Меню
+            # Menu
             if self.state == 'menu':
                 s = pygame.Surface(GAME_SIZE)
                 s.set_alpha(180)
                 s.fill((30, 30, 30))
                 game_surface.blit(s, (0, 0))
                 draw_menu()
-            # Масштабируем и центрируем итоговый surface
+            # Scale and center the final surface
             scale = get_scale() if fullscreen else 1.0
             scaled_surface = pygame.transform.scale(game_surface, (int(WIDTH * scale), int(HEIGHT * scale)))
             screen.fill((0, 0, 0))
@@ -206,7 +206,7 @@ class Game:
             screen.blit(scaled_surface, surf_rect)
             pygame.display.flip()
 
-            # Проверка смерти игрока
+            # Check player death
             if self.state == 'playing' and self.player.health <= 0:
                 self.state = 'menu'
 

@@ -17,12 +17,12 @@ class Tile(pygame.sprite.Sprite):
 class Map:
     def __init__(self, game, level_data=None, tileset_path="assets/tiles.png", lua_map_path=None):
         self.game = game
-        # Пробуем загрузить ground.jpg с диагностикой
+        # Try to load ground.jpg with diagnostics
         try:
             ground_img = pygame.transform.scale(pygame.image.load(os.path.join('assets', 'ground.jpg')).convert(), (TILE_SIZE, TILE_SIZE))
-            print("ground.jpg успешно загружен")
+            print("ground.jpg loaded successfully")
         except Exception as e:
-            print(f"Ошибка загрузки ground.jpg: {e}")
+            print(f"Error loading ground.jpg: {e}")
             ground_img = pygame.Surface((TILE_SIZE, TILE_SIZE))
             ground_img.fill((255, 0, 255))
         self.tile_images = {
@@ -47,23 +47,23 @@ class Map:
             self.height = map_data['height']
             self.tile_width = map_data['tile_width']
             self.tile_height = map_data['tile_height']
-            # Сортируем слои: сначала water, потом ground, потом остальные
+            # Sort layers: first water, then ground, then others
             water_layers = [layer for layer in map_data['layers'] if 'water' in layer.get('name', '').lower()]
             ground_layers = [layer for layer in map_data['layers'] if 'ground' in layer.get('name', '').lower()]
             other_layers = [layer for layer in map_data['layers'] if layer not in water_layers + ground_layers]
-            # Новый порядок: water -> ground -> остальные
+            # New order: water -> ground -> others
             sorted_layers = water_layers + ground_layers + other_layers
             for layer in sorted_layers:
                 if layer.get('data') and len(layer['data']) > 0:
                     self.load_layer(layer)
         else:
-            print("Ошибка загрузки Lua карты, создаем карту по умолчанию")
+            print("Error loading Lua map, creating default map")
             self.create_default_map()
 
     def load_layer(self, layer_data):
         data = layer_data['data']
         layer_name = layer_data.get('name', '').lower()
-        # Определяем изображение для слоя
+        # Determine image for layer
         if 'water' in layer_name:
             tile_image = self.tile_images['water']
         elif 'sand' in layer_name:
@@ -81,7 +81,7 @@ class Map:
                     if tile_image == self.tile_images['ground']:
                         ground_count += 1
         if tile_image == self.tile_images['ground']:
-            print(f"Создано ground-тайлов: {ground_count}")
+            print(f"Created ground tiles: {ground_count}")
 
     def load_from_data(self, level_data):
         for y, row in enumerate(level_data):
