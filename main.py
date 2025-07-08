@@ -13,7 +13,26 @@ from upgrade_system import UpgradeManager
 
 pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
+fullscreen = False
+# Surface для игрового поля
+GAME_SIZE = (WIDTH, HEIGHT)
+game_surface = pygame.Surface(GAME_SIZE)
+
+def toggle_fullscreen():
+    global screen, fullscreen
+    fullscreen = not fullscreen
+    if fullscreen:
+        screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+    else:
+        screen = pygame.display.set_mode(GAME_SIZE)
+
 clock = pygame.time.Clock()
+
+def get_scale():
+    screen_w, screen_h = screen.get_size()
+    scale_w = screen_w / WIDTH
+    scale_h = screen_h / HEIGHT
+    return min(scale_w, scale_h)
 
 class Game:
     def __init__(self):
@@ -120,6 +139,9 @@ class Game:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_F11:
+                        toggle_fullscreen()
                 if self.state == 'menu':
                     if event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
                         self.reset_game()
@@ -160,50 +182,49 @@ class Game:
 
             self.camera.update(self.player)
 
-            screen.fill((0, 0, 0))
-            # Сначала рисуем тайлы карты
+            # Всё рисуем на game_surface
+            game_surface.fill((0, 0, 0))
+            # Карта
             for tile in self.map.tiles:
-                screen.blit(tile.image, self.camera.apply(tile))
-            # Затем рисуем всех спрайтов, кроме игрока
+                game_surface.blit(tile.image, self.camera.apply(tile))
+            # Спрайты
             for sprite in self.all_sprites:
                 if sprite is not self.player:
-                    screen.blit(sprite.image, self.camera.apply(sprite))
-            # В самом конце рисуем игрока поверх всех
-            screen.blit(self.player.image, self.camera.apply(self.player))
-
-            # Отрисовка UI
-            draw_health_bar(screen, 10, 10, self.player.health, self.player.max_health)
-            self.upgrade_manager.draw_progress(screen)
-            
-            # Отрисовка экрана улучшений
-            self.upgrade_manager.draw_upgrade_screen(screen)
-            
-            # Отрисовка уведомлений
-            self.draw_notification(screen)
-
-            # --- Если меню, рисуем затемнение и текст поверх ---
+                    game_surface.blit(sprite.image, self.camera.apply(sprite))
+            game_surface.blit(self.player.image, self.camera.apply(self.player))
+            # UI
+            draw_health_bar(game_surface, 10, 10, self.player.health, self.player.max_health)
+            self.upgrade_manager.draw_progress(game_surface)
+            self.upgrade_manager.draw_upgrade_screen(game_surface)
+            self.draw_notification(game_surface)
+            # Меню
             if self.state == 'menu':
-                s = pygame.Surface((WIDTH, HEIGHT))
+                s = pygame.Surface(GAME_SIZE)
                 s.set_alpha(180)
                 s.fill((30, 30, 30))
-                screen.blit(s, (0, 0))
+                game_surface.blit(s, (0, 0))
                 draw_menu()
-            else:
-                pygame.display.flip()
+            # Масштабируем и центрируем итоговый surface
+            scale = get_scale() if fullscreen else 1.0
+            scaled_surface = pygame.transform.smoothscale(game_surface, (int(WIDTH * scale), int(HEIGHT * scale)))
+            screen.fill((0, 0, 0))
+            screen_rect = screen.get_rect()
+            surf_rect = scaled_surface.get_rect(center=screen_rect.center)
+            screen.blit(scaled_surface, surf_rect)
+            pygame.display.flip()
 
             # Проверка смерти игрока
             if self.state == 'playing' and self.player.health <= 0:
                 self.state = 'menu'
 
 def draw_menu():
-    screen.fill((30, 30, 30))
+    game_surface.fill((30, 30, 30))
     font = pygame.font.SysFont(None, 60)
     text = font.render('ROG DEMO', True, (255, 255, 255))
-    screen.blit(text, (WIDTH // 2 - text.get_width() // 2, HEIGHT // 2 - 100))
+    game_surface.blit(text, (WIDTH // 2 - text.get_width() // 2, HEIGHT // 2 - 100))
     font_small = pygame.font.SysFont(None, 40)
     play_text = font_small.render('Нажмите ENTER чтобы начать', True, (200, 200, 200))
-    screen.blit(play_text, (WIDTH // 2 - play_text.get_width() // 2, HEIGHT // 2))
-    pygame.display.flip()
+    game_surface.blit(play_text, (WIDTH // 2 - play_text.get_width() // 2, HEIGHT // 2))
 
 if __name__ == '__main__':
     game = Game()

@@ -1,7 +1,7 @@
 import pygame
 
 # Основные настройки
-WIDTH, HEIGHT = 800, 600
+WIDTH, HEIGHT = 1280, 720
 FPS = 60
 TILE_SIZE = 32
 
