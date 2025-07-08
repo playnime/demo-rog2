@@ -149,8 +149,11 @@ class Game:
             # --- ВСЕГДА обновляем и отрисовываем сцену ---
             if self.state == 'playing' and not self.upgrade_manager.showing_upgrade_screen:
                 self.all_sprites.update()
-                # Спавн врагов каждые 5 секунд
+                # Спавн врагов: интервал уменьшается с уровнем
                 current_time = pygame.time.get_ticks()
+                # Новый интервал: минимум 1 секунда
+                level = self.upgrade_manager.level
+                self.spawn_interval = max(1000, 5000 - (level - 1) * 400)
                 if current_time - self.last_spawn_time > self.spawn_interval:
                     self.spawn_enemy()
                     self.last_spawn_time = current_time
