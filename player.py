@@ -37,21 +37,9 @@ class Player(pygame.sprite.Sprite):
         new_x = self.x + dx * self.speed
         new_y = self.y + dy * self.speed
 
-        # Get map size in tiles
-        map_width = self.game.map.width
-        map_height = self.game.map.height
-
-        # Check boundaries (in pixels)
-        min_x = 0
-        min_y = 0
-        max_x = (map_width - 1) * TILE_SIZE
-        max_y = (map_height - 1) * TILE_SIZE
-
-        # Clamp coordinates
-        if min_x <= new_x <= max_x:
-            self.x = new_x
-        if min_y <= new_y <= max_y:
-            self.y = new_y
+        # Убираем любые проверки границ
+        self.x = new_x
+        self.y = new_y
 
         self.rect.x = self.x
         self.rect.y = self.y
