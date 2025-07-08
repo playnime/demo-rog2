@@ -47,6 +47,7 @@ class Player(pygame.sprite.Sprite):
         self.attack_anim_timer = 0
         self.attack_anim_speed = 0.08  # скорость переключения кадров атаки
         self.attack_frame = 0  # текущий кадр атаки
+        self.attack_direction = "right"  # направление атаки (не меняется при движении)
         
         # Base attributes
         self.max_health = PLAYER_HEALTH
@@ -120,8 +121,8 @@ class Player(pygame.sprite.Sprite):
                 if self.attack_frame >= len(self.attack_frames_right):
                     self.is_attacking = False
                     self.attack_frame = 0
-            # Показываем текущий кадр атаки
-            if self.direction == "right":
+            # Показываем текущий кадр атаки (используем attack_direction)
+            if self.attack_direction == "right":
                 self.image = self.attack_frames_right[self.attack_frame]
             else:
                 self.image = self.attack_frames_left[self.attack_frame]
@@ -131,7 +132,7 @@ class Player(pygame.sprite.Sprite):
             if self.is_moving and self.animation_timer >= self.animation_speed:
                 self.animation_timer = 0
                 self.current_frame = (self.current_frame + 1) % len(self.walk_right_frames)
-            # Выбор кадра ходьбы
+            # Выбор кадра ходьбы (используем direction для движения)
             if self.direction == "right":
                 self.image = self.walk_right_frames[self.current_frame] if self.is_moving else self.walk_right_frames[0]
             else:
@@ -197,9 +198,9 @@ class Player(pygame.sprite.Sprite):
                 direction = (dx / length, dy / length)
         # Определяем направление атаки для анимации
         if direction[0] > 0:
-            self.direction = "right"
+            self.attack_direction = "right"
         elif direction[0] < 0:
-            self.direction = "left"
+            self.attack_direction = "left"
         # Создаём SwingAttack
         attack = SwingAttack(self.game, self, direction)
         if random.random() < self.critical_chance:
