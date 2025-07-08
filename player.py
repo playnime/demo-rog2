@@ -34,10 +34,19 @@ class Player(pygame.sprite.Sprite):
         self.last_attack_time = 0
 
     def move(self, dx=0, dy=0):
+        # Новые координаты после перемещения
         new_x = self.x + dx * self.speed
         new_y = self.y + dy * self.speed
 
-        # Убираем любые проверки границ
+        # Получаем размеры карты
+        map_width = self.game.map.width * TILE_SIZE
+        map_height = self.game.map.height * TILE_SIZE
+
+        # Ограничиваем координаты, чтобы не выйти за границы карты
+        new_x = max(0, min(new_x, map_width - TILE_SIZE))
+        new_y = max(0, min(new_y, map_height - TILE_SIZE))
+
+        # Устанавливаем новые координаты
         self.x = new_x
         self.y = new_y
 
