@@ -32,6 +32,12 @@ class Player(pygame.sprite.Sprite):
         self.animation_speed = 0.12  # секунд на кадр
         self.direction = "right"  # "right" или "left"
         self.is_moving = False
+        # --- Анимация атаки ---
+        self.attack_frame_right = pygame.image.load(os.path.join("assets", "bunny", "bunny_attack.png")).convert_alpha()
+        self.attack_frame_left = pygame.transform.flip(self.attack_frame_right, True, False)
+        self.is_attacking = False
+        self.attack_anim_timer = 0
+        self.attack_anim_duration = 0.3  # длительность анимации атаки в секундах
         
         # Base attributes
         self.max_health = PLAYER_HEALTH
@@ -93,15 +99,28 @@ class Player(pygame.sprite.Sprite):
             self.move(dx, dy)
         # --- Анимация ---
         dt = 1 / 60  # Предполагаем 60 FPS, если dt не передаётся
-        self.animation_timer += dt if self.is_moving else 0
-        if self.is_moving and self.animation_timer >= self.animation_speed:
-            self.animation_timer = 0
-            self.current_frame = (self.current_frame + 1) % len(self.walk_right_frames)
-        # Выбор кадра
-        if self.direction == "right":
-            self.image = self.walk_right_frames[self.current_frame] if self.is_moving else self.walk_right_frames[0]
+        
+        # Обработка анимации атаки
+        if self.is_attacking:
+            self.attack_anim_timer += dt
+            if self.attack_anim_timer >= self.attack_anim_duration:
+                self.is_attacking = False  # Анимация атаки закончилась
+            # Показываем кадр атаки
+            if self.direction == "right":
+                self.image = self.attack_frame_right
+            else:
+                self.image = self.attack_frame_left
         else:
-            self.image = self.walk_left_frames[self.current_frame] if self.is_moving else self.walk_left_frames[0]
+            # Обычная анимация ходьбы
+            self.animation_timer += dt if self.is_moving else 0
+            if self.is_moving and self.animation_timer >= self.animation_speed:
+                self.animation_timer = 0
+                self.current_frame = (self.current_frame + 1) % len(self.walk_right_frames)
+            # Выбор кадра ходьбы
+            if self.direction == "right":
+                self.image = self.walk_right_frames[self.current_frame] if self.is_moving else self.walk_right_frames[0]
+            else:
+                self.image = self.walk_left_frames[self.current_frame] if self.is_moving else self.walk_left_frames[0]
         # Обновляем позицию rect
         self.rect.x = self.x
         self.rect.y = self.y
@@ -133,6 +152,9 @@ class Player(pygame.sprite.Sprite):
         if not self.can_attack():
             return None
         self.last_attack_time = pygame.time.get_ticks()
+        # Включаем анимацию атаки
+        self.is_attacking = True
+        self.attack_anim_timer = 0
         # Если направление не задано — вычислить по мыши (в мировых координатах)
         if direction is None:
             mouse_x, mouse_y = pygame.mouse.get_pos()
@@ -157,6 +179,11 @@ class Player(pygame.sprite.Sprite):
                 direction = (1, 0)
             else:
                 direction = (dx / length, dy / length)
+        # Определяем направление атаки для анимации
+        if direction[0] > 0:
+            self.direction = "right"
+        elif direction[0] < 0:
+            self.direction = "left"
         # Создаём SwingAttack
         attack = SwingAttack(self.game, self, direction)
         if random.random() < self.critical_chance:
