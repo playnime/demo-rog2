@@ -56,13 +56,22 @@ class Enemy(pygame.sprite.Sprite):
         self.rect.x = int(self.x)
         self.rect.y = int(self.y)
 
-        # Проверка столкновения с другими врагами
+        # Мягкое выталкивание при столкновении с другими врагами
         for other in self.game.enemies:
             if other is not self and self.rect.colliderect(other.rect):
-                self.x, self.y = old_x, old_y
+                # Вектор между центрами
+                ox, oy = other.rect.centerx, other.rect.centery
+                sx, sy = self.rect.centerx, self.rect.centery
+                vec_x = sx - ox
+                vec_y = sy - oy
+                dist = max(1, (vec_x**2 + vec_y**2)**0.5)
+                # Сдвигаем на небольшое расстояние (например, 2 пикселя)
+                push_strength = 2
+                self.x += (vec_x / dist) * push_strength
+                self.y += (vec_y / dist) * push_strength
                 self.rect.x = int(self.x)
                 self.rect.y = int(self.y)
-                break
+                # Можно добавить: other тоже немного сдвигать, если хочется более плавно
 
         # Проверка столкновения с игроком для урона
         if self.rect.colliderect(self.game.player.rect):
