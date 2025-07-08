@@ -4,7 +4,7 @@ import random
 import math
 from settings import *
 from player import Player
-from enemy import BasicEnemy, FastEnemy, StrongEnemy, BossEnemy
+from enemy import BasicEnemy, FastEnemy, StrongEnemy, BossEnemy, FoxEnemy, BlackFoxEnemy, RedFoxEnemy
 from map import Map
 from camera import Camera
 from attack import Attack
@@ -91,7 +91,7 @@ class Game:
             spawn_x = max(0, min(self.map.width - 1, spawn_x))
             spawn_y = max(0, min(self.map.height - 1, spawn_y))
         # Randomly select enemy type
-        enemy_types = [BasicEnemy, FastEnemy, StrongEnemy]
+        enemy_types = [BasicEnemy, FastEnemy, StrongEnemy, FoxEnemy, BlackFoxEnemy, RedFoxEnemy]
         enemy_class = random.choice(enemy_types)
         enemy = enemy_class(self, spawn_x, spawn_y)
         self.all_sprites.add(enemy)

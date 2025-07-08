@@ -21,10 +21,31 @@ def tint_image(image, color):
     return tinted
 
 class Enemy(pygame.sprite.Sprite):
-    def __init__(self, game, x, y, image_path, speed, health, damage, attack_cooldown, tint_color=None):
+    def __init__(self, game, x, y, image_path, speed, health, damage, attack_cooldown, tint_color=None, animation_frames=None, animation_speed=200):
         super().__init__(game.all_sprites)
         self.game = game
-        if isinstance(image_path, str):
+        self.animation_frames = animation_frames
+        self.animation_speed = animation_speed
+        self.current_frame = 0
+        self.last_animation_time = pygame.time.get_ticks()
+        self.facing_right = True  # Направление взгляда лисы
+        
+        if animation_frames:
+            # Загружаем все кадры анимации
+            self.frames = []
+            self.frames_flipped = []  # Перевернутые кадры для движения влево
+            for frame_path in animation_frames:
+                frame = pygame.image.load(frame_path).convert_alpha()
+                # Увеличиваем размер для лис (1.5x больше стандартного тайла)
+                scaled_frame = pygame.transform.scale(frame, (int(TILE_SIZE * 1.5), int(TILE_SIZE * 1.5)))
+                if tint_color:
+                    scaled_frame = tint_image(scaled_frame, tint_color)
+                self.frames.append(scaled_frame)
+                # Создаем перевернутую версию
+                flipped_frame = pygame.transform.flip(scaled_frame, True, False)
+                self.frames_flipped.append(flipped_frame)
+            self.image = self.frames[0]
+        elif isinstance(image_path, str):
             self.image = pygame.image.load(image_path).convert_alpha()
             scaled_image = pygame.transform.scale(self.image, (TILE_SIZE, TILE_SIZE))
             self.image = scaled_image
@@ -45,7 +66,7 @@ class Enemy(pygame.sprite.Sprite):
         # Flash effect
         self.flash_time = 0
         self.flash_duration = 100  # ms
-        self.base_image = self.image.copy()
+        self._update_base_image()
 
     def update(self):
         # Simple behavior: move toward player
@@ -56,12 +77,33 @@ class Enemy(pygame.sprite.Sprite):
         dx = dx / dist
         dy = dy / dist
 
+        # Обновляем направление взгляда лисы
+        if self.animation_frames:
+            if dx > 0 and not self.facing_right:
+                self.facing_right = True
+            elif dx < 0 and self.facing_right:
+                self.facing_right = False
+
         old_x, old_y = self.x, self.y
         self.x += dx * self.speed
         self.y += dy * self.speed
 
         self.rect.x = int(self.x)
         self.rect.y = int(self.y)
+        
+        # Обновление анимации
+        if self.animation_frames:
+            now = pygame.time.get_ticks()
+            if now - self.last_animation_time > self.animation_speed:
+                self.current_frame = (self.current_frame + 1) % len(self.frames)
+                # Выбираем правильное направление анимации
+                if self.facing_right:
+                    self.image = self.frames[self.current_frame]
+                else:
+                    self.image = self.frames_flipped[self.current_frame]
+                self.last_animation_time = now
+                # Обновляем базовое изображение для эффекта вспышки
+                self._update_base_image()
 
         # Soft push when colliding with other enemies
         for other in self.game.enemies:
@@ -96,9 +138,30 @@ class Enemy(pygame.sprite.Sprite):
         # Flash effect update
         if self.flash_time > 0:
             if pygame.time.get_ticks() - self.flash_time < self.flash_duration:
-                self.image.fill((255, 255, 255))
+                # Создаем эффект засветления
+                if self.animation_frames:
+                    if self.facing_right:
+                        base_frame = self.frames[self.current_frame]
+                    else:
+                        base_frame = self.frames_flipped[self.current_frame]
+                else:
+                    base_frame = self.base_image
+                
+                # Создаем засвеченную версию, смешивая с белым
+                flash_surface = base_frame.copy()
+                white_overlay = pygame.Surface(flash_surface.get_size())
+                white_overlay.fill((255, 255, 255))
+                flash_surface.blit(white_overlay, (0, 0), special_flags=pygame.BLEND_ADD)
+                self.image = flash_surface
             else:
-                self.image = self.base_image.copy()
+                # Возвращаем нормальное изображение с правильным направлением
+                if self.animation_frames:
+                    if self.facing_right:
+                        self.image = self.frames[self.current_frame]
+                    else:
+                        self.image = self.frames_flipped[self.current_frame]
+                else:
+                    self.image = self.base_image.copy()
                 self.flash_time = 0
 
     def take_damage(self, amount):
@@ -109,6 +172,16 @@ class Enemy(pygame.sprite.Sprite):
         DamageNumber.spawn(self.game, self.rect.centerx, self.rect.top, amount)
         if self.health <= 0:
             self.kill()
+
+    def _update_base_image(self):
+        """Обновляет базовое изображение для эффекта вспышки"""
+        if self.animation_frames:
+            if self.facing_right:
+                self.base_image = self.frames[self.current_frame].copy()
+            else:
+                self.base_image = self.frames_flipped[self.current_frame].copy()
+        else:
+            self.base_image = self.image.copy()
 
 # Enemy types
 class BasicEnemy(Enemy):
@@ -154,6 +227,46 @@ class BossEnemy(Enemy):
         hp = 500 + int(level * 30)
         dmg = 20 + int(level * 2.5)
         super().__init__(game, x, y, "assets/basic_yeti.png", 0.7, hp, dmg, 1200, (255, 255, 0))
+
+    def kill(self):
+        orb = ExperienceOrb(self.game, self.rect.centerx, self.rect.centery)
+        self.game.experience_orbs.add(orb)
+        super().kill()
+
+# Fox enemies - три версии лисы с анимацией
+class FoxEnemy(Enemy):
+    def __init__(self, game, x, y):
+        level = getattr(game.upgrade_manager, 'level', 1)
+        hp = 40 + int(level * 2.5)
+        dmg = 4 + int(level * 0.4)
+        animation_frames = ["assets/fox_anim1.png", "assets/fox_anim2.png", "assets/fox_anim3.png"]
+        super().__init__(game, x, y, None, 1.8, hp, dmg, 450, None, animation_frames, 300)
+
+    def kill(self):
+        orb = ExperienceOrb(self.game, self.rect.centerx, self.rect.centery)
+        self.game.experience_orbs.add(orb)
+        super().kill()
+
+class BlackFoxEnemy(Enemy):
+    def __init__(self, game, x, y):
+        level = getattr(game.upgrade_manager, 'level', 1)
+        hp = 80 + int(level * 4)
+        dmg = 12 + int(level * 1.2)
+        animation_frames = ["assets/fox_anim1.png", "assets/fox_anim2.png", "assets/fox_anim3.png"]
+        super().__init__(game, x, y, None, 0.8, hp, dmg, 800, (50, 50, 50), animation_frames, 400)
+
+    def kill(self):
+        orb = ExperienceOrb(self.game, self.rect.centerx, self.rect.centery)
+        self.game.experience_orbs.add(orb)
+        super().kill()
+
+class RedFoxEnemy(Enemy):
+    def __init__(self, game, x, y):
+        level = getattr(game.upgrade_manager, 'level', 1)
+        hp = 25 + int(level * 1.5)
+        dmg = 2 + int(level * 0.2)
+        animation_frames = ["assets/fox_anim1.png", "assets/fox_anim2.png", "assets/fox_anim3.png"]
+        super().__init__(game, x, y, None, 3.2, hp, dmg, 300, (255, 100, 100), animation_frames, 200)
 
     def kill(self):
         orb = ExperienceOrb(self.game, self.rect.centerx, self.rect.centery)
