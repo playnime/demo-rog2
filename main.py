@@ -17,6 +17,7 @@ fullscreen = False
 # Surface for the game field
 GAME_SIZE = (WIDTH, HEIGHT)
 game_surface = pygame.Surface(GAME_SIZE)
+font_fps = pygame.font.SysFont(None, 24)
 
 def toggle_fullscreen():
     global screen, fullscreen
@@ -61,7 +62,7 @@ class Game:
         player_y = map_height // 2
         self.player = Player(self, player_x, player_y)
         # Load map from Lua file
-        self.map = Map(self, lua_map_path="assets/map.lua")
+        self.map = Map(self, lua_map_path="assets/map/final_map.lua")
         self.camera = Camera(WIDTH, HEIGHT)
         self.enemy = BasicEnemy(self, 5, 5)
         self.all_sprites.add(self.enemy)
@@ -127,10 +128,15 @@ class Game:
         scale_h = screen_h / HEIGHT
         return min(scale_w, scale_h)
 
+    def draw_fps(self, surface, clock):
+        fps = int(clock.get_fps())
+        fps_text = font_fps.render(f"FPS: {fps}", True, (255,255,0))
+        surface.blit(fps_text, (surface.get_width() - fps_text.get_width() - 10, 10))
+
     def run(self):
         running = True
         while running:
-            dt = clock.tick(FPS) / 1000
+            dt = clock.tick(60) / 1000
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
@@ -205,6 +211,7 @@ class Game:
             self.upgrade_manager.draw_progress(game_surface)
             self.upgrade_manager.draw_upgrade_screen(game_surface)
             self.draw_notification(game_surface)
+            self.draw_fps(game_surface, clock)
             # Menu
             if self.state == 'menu':
                 s = pygame.Surface(GAME_SIZE)

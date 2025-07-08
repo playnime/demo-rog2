@@ -31,7 +31,7 @@ class LuaMapLoader:
                         'name': layer.get('name', ''),
                         'width': layer.get('width', width),
                         'height': layer.get('height', height),
-                        'data': self._convert_tile_data(layer.get('data', []))
+                        'data': self._convert_tile_data(layer.get('data', []), layer.get('width', width), layer.get('height', height))
                     }
                     game_layers.append(layer_data)
             
@@ -188,28 +188,22 @@ class LuaMapLoader:
         result['layers'] = layers
         return result
     
-    def _convert_tile_data(self, data):
+    def _convert_tile_data(self, data, width, height):
         """Конвертирует данные тайлов в формат для игры"""
         if not data:
             return []
-        
-        # Преобразуем одномерный массив в двумерный
-        width = 30  # По умолчанию
-        height = 20
-        
         result = []
         for y in range(height):
             row = []
             for x in range(width):
                 index = y * width + x
                 if index < len(data):
-                    # Tiled использует 1-индексацию, конвертируем в 0-индексацию
                     tile_id = data[index] - 1 if data[index] > 0 else -1
                     row.append(tile_id)
                 else:
                     row.append(-1)
+            row = row[:width]
             result.append(row)
-        
         return result
 
 # Функция для тестирования
