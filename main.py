@@ -206,7 +206,7 @@ class Game:
                 draw_menu()
             # Масштабируем и центрируем итоговый surface
             scale = get_scale() if fullscreen else 1.0
-            scaled_surface = pygame.transform.smoothscale(game_surface, (int(WIDTH * scale), int(HEIGHT * scale)))
+            scaled_surface = pygame.transform.scale(game_surface, (int(WIDTH * scale), int(HEIGHT * scale)))
             screen.fill((0, 0, 0))
             screen_rect = screen.get_rect()
             surf_rect = scaled_surface.get_rect(center=screen_rect.center)
