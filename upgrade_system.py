@@ -65,20 +65,27 @@ class UpgradeManager:
         ]
         return upgrades
     
-    def on_enemy_killed(self):
-        """Вызывается при убийстве врага"""
+    def on_experience_orb_collected(self):
+        """Вызывается при сборе сферы опыта игроком"""
         self.current_kills += 1
         if self.current_kills >= self.kills_until_upgrade:
             self.level += 1
             self.show_upgrade_screen()
             self.current_kills = 0
-            # Увеличиваем количество убийств для следующего улучшения
-            self.kills_until_upgrade = min(self.kills_until_upgrade + 2, 20)
-            
+            # Нелинейный рост требуемого опыта
+            self.kills_until_upgrade = int(self.kills_until_upgrade * 1.5)
             # Проверяем, нужно ли спавнить босса
             if self.level == 5 and not self.boss_spawned:
                 self.boss_spawned = True
                 return "spawn_boss"
+        return None
+    
+    def on_enemy_killed(self):
+        """Больше не начисляет опыт напрямую! Только для спавна босса."""
+        # Не увеличиваем опыт! Только проверяем спавн босса
+        if self.level == 5 and not self.boss_spawned:
+            self.boss_spawned = True
+            return "spawn_boss"
         return None
     
     def show_upgrade_screen(self):

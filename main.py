@@ -10,6 +10,7 @@ from camera import Camera
 from attack import Attack
 from utils import draw_health_bar
 from upgrade_system import UpgradeManager
+from experience_orb import ExperienceOrb
 
 pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -37,7 +38,7 @@ class Game:
         self.screen = screen
         self.reset_game()
         self.last_spawn_time = pygame.time.get_ticks()
-        self.spawn_interval = 5000  # 5 seconds in milliseconds
+        self.spawn_interval = 2000  # 2 seconds in milliseconds (раньше было 5000)
         self.spawn_distance = 200  # Distance from player for spawning
         self.notification_text = ""
         self.notification_time = 0
@@ -46,6 +47,7 @@ class Game:
     def reset_game(self):
         self.all_sprites = pygame.sprite.Group()
         self.enemies = pygame.sprite.Group()
+        self.experience_orbs = pygame.sprite.Group()  # Новая группа для сфер опыта
         # Load map from Lua file
         self.map = Map(self, lua_map_path="assets/map/final_map.lua")
         map_width = self.map.width
@@ -54,6 +56,7 @@ class Game:
         player_x = map_width // 2
         player_y = map_height // 2
         self.player = Player(self, player_x, player_y)
+        self.all_sprites.add(self.player)
         self.camera = Camera(WIDTH, HEIGHT)
         self.enemy = BasicEnemy(self, 5, 5)
         self.all_sprites.add(self.enemy)
@@ -64,21 +67,33 @@ class Game:
         self.upgrade_manager = UpgradeManager()
 
     def spawn_enemy(self):
-        # Generate random angle
-        angle = random.uniform(0, 2 * 3.14159)
-        # Generate random distance within spawn_distance
-        distance = random.uniform(100, self.spawn_distance)
-        
-        # Calculate position relative to player
-        spawn_x = self.player.x + distance * math.cos(angle)
-        spawn_y = self.player.y + distance * math.sin(angle)
-        
+        # Получаем границы камеры в тайлах
+        cam_left = -self.camera.offset.x // TILE_SIZE
+        cam_top = -self.camera.offset.y // TILE_SIZE
+        cam_right = cam_left + WIDTH // TILE_SIZE
+        cam_bottom = cam_top + HEIGHT // TILE_SIZE
+        # Задаём минимальное и максимальное расстояние от игрока
+        min_dist = max(WIDTH, HEIGHT) // TILE_SIZE // 2 + 1  # чуть за экраном
+        max_dist = min(6, max(self.map.width, self.map.height) // 2)  # не дальше 6 тайлов
+        for _ in range(20):  # 20 попыток найти подходящее место
+            angle = random.uniform(0, 2 * math.pi)
+            distance = random.uniform(min_dist, max_dist)
+            spawn_x = int(self.player.x // TILE_SIZE + distance * math.cos(angle))
+            spawn_y = int(self.player.y // TILE_SIZE + distance * math.sin(angle))
+            # Проверяем, что враг вне камеры, но в пределах карты
+            if (spawn_x < cam_left or spawn_x > cam_right or spawn_y < cam_top or spawn_y > cam_bottom) and \
+               0 <= spawn_x < self.map.width and 0 <= spawn_y < self.map.height:
+                break
+        else:
+            # Если не нашли — спавним как раньше
+            spawn_x = self.player.x // TILE_SIZE + random.randint(-max_dist, max_dist)
+            spawn_y = self.player.y // TILE_SIZE + random.randint(-max_dist, max_dist)
+            spawn_x = max(0, min(self.map.width - 1, spawn_x))
+            spawn_y = max(0, min(self.map.height - 1, spawn_y))
         # Randomly select enemy type
-        enemy_types = [BasicEnemy, FastEnemy, StrongEnemy]  # BossEnemy removed
+        enemy_types = [BasicEnemy, FastEnemy, StrongEnemy]
         enemy_class = random.choice(enemy_types)
-        
-        # Create enemy at this position
-        enemy = enemy_class(self, spawn_x // TILE_SIZE, spawn_y // TILE_SIZE)
+        enemy = enemy_class(self, spawn_x, spawn_y)
         self.all_sprites.add(enemy)
         self.enemies.add(enemy)
 
@@ -176,11 +191,12 @@ class Game:
             # --- ALWAYS update and draw the scene ---
             if self.state == 'playing' and not self.upgrade_manager.showing_upgrade_screen:
                 self.all_sprites.update()
+                self.experience_orbs.update()
                 # Enemy spawn: interval decreases with level
                 current_time = pygame.time.get_ticks()
-                # New interval: minimum 1 second
+                # Новый интервал: минимум 300 мс, быстрее уменьшается с уровнем
                 level = self.upgrade_manager.level
-                self.spawn_interval = max(1000, 5000 - (level - 1) * 400)
+                self.spawn_interval = max(300, 2000 - (level - 1) * 200)
                 if current_time - self.last_spawn_time > self.spawn_interval:
                     self.spawn_enemy()
                     self.last_spawn_time = current_time
@@ -205,6 +221,9 @@ class Game:
                         tile_img = self.map.get_tile_image(tile_id)
                         tile_rect = pygame.Rect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE)
                         game_surface.blit(tile_img, self.camera.apply(type('obj', (), {'rect': tile_rect})))
+            # Теперь — experience orbs (поверх карты, под врагами и игроком)
+            for orb in self.experience_orbs:
+                game_surface.blit(orb.image, self.camera.apply(orb))
             # Sprites
             for sprite in self.all_sprites:
                 if sprite is not self.player:
@@ -254,6 +273,12 @@ class Game:
             # Check player death
             if self.state == 'playing' and self.player.health <= 0:
                 self.state = 'menu'
+
+            # --- Новый блок: обработка сбора сфер ---
+            if self.state == 'playing' and not self.upgrade_manager.showing_upgrade_screen:
+                collected = pygame.sprite.spritecollide(self.player, self.experience_orbs, dokill=True)
+                for orb in collected:
+                    self.upgrade_manager.on_experience_orb_collected()
 
 def draw_menu():
     game_surface.fill((30, 30, 30))

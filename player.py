@@ -5,7 +5,7 @@ from attack import Attack, SwingAttack
 
 class Player(pygame.sprite.Sprite):
     def __init__(self, game, x, y):
-        super().__init__(game.all_sprites)
+        super().__init__()
         self.game = game
         self.image = pygame.Surface((TILE_SIZE, TILE_SIZE))
         self.image.fill(WHITE)
@@ -21,7 +21,7 @@ class Player(pygame.sprite.Sprite):
         self.speed = PLAYER_SPEED
         self.attack_damage = 20
         self.attack_cooldown = 500  # milliseconds
-        self.attack_size_multiplier = 1.0
+        self.attack_size_multiplier = 2.0  # Было 1.0, теперь радиус атаки в 2 раза больше
         
         # Special abilities
         self.vampirism = 0

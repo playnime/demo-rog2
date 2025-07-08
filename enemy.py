@@ -2,6 +2,7 @@ import pygame
 from settings import *
 import random
 import math
+from experience_orb import ExperienceOrb
 
 def create_enemy_image(color, size=TILE_SIZE):
     """Creates an enemy image of the given color"""
@@ -112,19 +113,52 @@ class Enemy(pygame.sprite.Sprite):
 # Enemy types
 class BasicEnemy(Enemy):
     def __init__(self, game, x, y):
-        super().__init__(game, x, y, "assets/basic_gryavol.png", 1.5, 50, 10, 500, (255, 255, 255))  # Normal (white tint)
+        level = getattr(game.upgrade_manager, 'level', 1)
+        hp = 50 + int(level * 3)
+        dmg = 5 + int(level * 0.5)
+        super().__init__(game, x, y, "assets/basic_gryavol.png", 1.5, hp, dmg, 500, (255, 255, 255))
+
+    def kill(self):
+        # Спавним сферу опыта на позиции врага
+        orb = ExperienceOrb(self.game, self.rect.centerx, self.rect.centery)
+        self.game.experience_orbs.add(orb)
+        super().kill()
 
 class FastEnemy(Enemy):
     def __init__(self, game, x, y):
-        super().__init__(game, x, y, "assets/basic_gryavol.png", 3.0, 30, 5, 300, (100, 255, 100))  # Green tint
+        level = getattr(game.upgrade_manager, 'level', 1)
+        hp = 30 + int(level * 2)
+        dmg = 3 + int(level * 0.3)
+        super().__init__(game, x, y, "assets/basic_yeti.png", 2.5, hp, dmg, 400, (100, 200, 255))
+
+    def kill(self):
+        orb = ExperienceOrb(self.game, self.rect.centerx, self.rect.centery)
+        self.game.experience_orbs.add(orb)
+        super().kill()
 
 class StrongEnemy(Enemy):
     def __init__(self, game, x, y):
-        super().__init__(game, x, y, "assets/basic_gryavol.png", 0.8, 100, 20, 800, (255, 100, 100))  # Red tint
+        level = getattr(game.upgrade_manager, 'level', 1)
+        hp = 120 + int(level * 6)
+        dmg = 10 + int(level * 1.0)
+        super().__init__(game, x, y, "assets/basic_gryavol.png", 1.0, hp, dmg, 700, (255, 100, 100))
+
+    def kill(self):
+        orb = ExperienceOrb(self.game, self.rect.centerx, self.rect.centery)
+        self.game.experience_orbs.add(orb)
+        super().kill()
 
 class BossEnemy(Enemy):
     def __init__(self, game, x, y):
-        super().__init__(game, x, y, "assets/basic_yeti.png", 1.2, 200, 30, 1000)  # Boss (no tint)
+        level = getattr(game.upgrade_manager, 'level', 1)
+        hp = 500 + int(level * 30)
+        dmg = 20 + int(level * 2.5)
+        super().__init__(game, x, y, "assets/basic_yeti.png", 0.7, hp, dmg, 1200, (255, 255, 0))
+
+    def kill(self):
+        orb = ExperienceOrb(self.game, self.rect.centerx, self.rect.centery)
+        self.game.experience_orbs.add(orb)
+        super().kill()
 
 class DamageNumber(pygame.sprite.Sprite):
     def __init__(self, game, x, y, value):
