@@ -146,12 +146,12 @@ class UpgradeManager:
         
         # Заголовок
         font_large = pygame.font.SysFont(None, 48)
-        title = font_large.render("ВЫБЕРИТЕ УЛУЧШЕНИЕ", True, (255, 255, 255))
+        title = font_large.render("CHOOSE AN UPGRADE", True, (255, 255, 255))
         screen.blit(title, (WIDTH // 2 - title.get_width() // 2, 50))
         
         # Инструкция
         font_small = pygame.font.SysFont(None, 24)
-        instruction = font_small.render("Нажмите 1, 2 или 3 для выбора", True, (200, 200, 200))
+        instruction = font_small.render("Press 1, 2 or 3 to choose", True, (200, 200, 200))
         screen.blit(instruction, (WIDTH // 2 - instruction.get_width() // 2, 100))
         
         # Отображение улучшений
@@ -192,7 +192,7 @@ class UpgradeManager:
             return
         
         font = pygame.font.SysFont(None, 24)
-        progress_text = font.render(f"Уровень: {self.level} | Убийства до улучшения: {self.current_kills}/{self.kills_until_upgrade}", True, (255, 255, 255))
+        progress_text = font.render(f"Level: {self.level} | Kills to upgrade: {self.current_kills}/{self.kills_until_upgrade}", True, (255, 255, 255))
         screen.blit(progress_text, (10, 60))
         
         # Прогресс-бар

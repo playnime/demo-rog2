@@ -86,7 +86,7 @@ class Game:
         spawn_y = self.player.y + distance * math.sin(angle)
         
         # Случайно выбираем тип врага
-        enemy_types = [BasicEnemy, FastEnemy, StrongEnemy, BossEnemy]
+        enemy_types = [BasicEnemy, FastEnemy, StrongEnemy]  # BossEnemy убран
         enemy_class = random.choice(enemy_types)
         
         # Создаем врага в этой позиции
@@ -95,21 +95,17 @@ class Game:
         self.enemies.add(enemy)
 
     def spawn_boss(self):
-        """Спавнит босса на 5-м уровне"""
-        # Генерируем позицию для босса (дальше от игрока)
+        """Spawns the boss at level 5"""
+        # Generate boss position (further from player)
         angle = random.uniform(0, 2 * 3.14159)
-        distance = self.spawn_distance * 1.5  # Босс появляется дальше
-        
+        distance = self.spawn_distance * 1.5
         spawn_x = self.player.x + distance * math.cos(angle)
         spawn_y = self.player.y + distance * math.sin(angle)
-        
-        # Создаем босса
         boss = BossEnemy(self, spawn_x // TILE_SIZE, spawn_y // TILE_SIZE)
         self.all_sprites.add(boss)
         self.enemies.add(boss)
-        
-        # Показываем сообщение о появлении босса
-        self.show_notification("БОСС ПОЯВИЛСЯ!")
+        # Show notification about boss appearance
+        self.show_notification("BOSS APPEARED!")
 
     def show_notification(self, text):
         """Показывает уведомление на экране"""
@@ -117,17 +113,14 @@ class Game:
         self.notification_time = pygame.time.get_ticks()
 
     def draw_notification(self, screen):
-        """Отрисовывает уведомление"""
+        """Draws notification"""
         if self.notification_text and pygame.time.get_ticks() - self.notification_time < self.notification_duration:
             font = pygame.font.SysFont(None, 36)
             text_surface = font.render(self.notification_text, True, (255, 0, 0))
             text_rect = text_surface.get_rect(center=(WIDTH // 2, 100))
-            
-            # Фон для текста
             bg_rect = text_rect.inflate(20, 10)
             pygame.draw.rect(screen, (0, 0, 0), bg_rect)
             pygame.draw.rect(screen, (255, 0, 0), bg_rect, 2)
-            
             screen.blit(text_surface, text_rect)
         elif self.notification_text:
             self.notification_text = ""
@@ -223,7 +216,7 @@ def draw_menu():
     text = font.render('ROG DEMO', True, (255, 255, 255))
     game_surface.blit(text, (WIDTH // 2 - text.get_width() // 2, HEIGHT // 2 - 100))
     font_small = pygame.font.SysFont(None, 40)
-    play_text = font_small.render('Нажмите ENTER чтобы начать', True, (200, 200, 200))
+    play_text = font_small.render('Press ENTER to start', True, (200, 200, 200))
     game_surface.blit(play_text, (WIDTH // 2 - play_text.get_width() // 2, HEIGHT // 2))
 
 if __name__ == '__main__':
