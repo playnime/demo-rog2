@@ -1,12 +1,16 @@
 import pygame
+import os
 from settings import TILE_SIZE
 
 class ExperienceOrb(pygame.sprite.Sprite):
     def __init__(self, game, x, y):
         super().__init__(game.experience_orbs)
         self.game = game
-        self.image = pygame.Surface((TILE_SIZE // 3, TILE_SIZE // 3), pygame.SRCALPHA)
-        pygame.draw.circle(self.image, (50, 150, 255), (TILE_SIZE // 6, TILE_SIZE // 6), TILE_SIZE // 6)
+        # Загружаем текстуру морковки вместо создания круга
+        self.image = pygame.image.load(os.path.join("assets", "carrot.png")).convert_alpha()
+        # Масштабируем морковку до подходящего размера
+        orb_size = TILE_SIZE // 1  # размер сферы опыта (увеличили с //2 до //1.5)
+        self.image = pygame.transform.scale(self.image, (orb_size, orb_size))
         self.rect = self.image.get_rect(center=(x, y))
         self.speed = 2
 
