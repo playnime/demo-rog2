@@ -1,7 +1,7 @@
 import pygame
 from settings import *
 import random
-from attack import Attack
+from attack import Attack, SwingAttack
 
 class Player(pygame.sprite.Sprite):
     def __init__(self, game, x, y):
@@ -28,6 +28,7 @@ class Player(pygame.sprite.Sprite):
         self.critical_chance = 0
         self.dodge_chance = 0
         self.explosive_attack = False
+        self.knockback_attack = False
         
         # Last attack time
         self.last_attack_time = 0
@@ -88,25 +89,40 @@ class Player(pygame.sprite.Sprite):
         current_time = pygame.time.get_ticks()
         return current_time - self.last_attack_time >= self.attack_cooldown
     
-    def attack(self):
-        """Perform attack"""
+    def attack(self, direction=None):
+        """Perform attack. Если direction не задан — вычислить по мыши."""
         if not self.can_attack():
             return None
-        
         self.last_attack_time = pygame.time.get_ticks()
-        
-        # Create attack with upgrades
-        attack = Attack(self.game, self)
-        
-        # Apply critical hit
+        # Если направление не задано — вычислить по мыши (в мировых координатах)
+        if direction is None:
+            mouse_x, mouse_y = pygame.mouse.get_pos()
+            # Получаем scale и surf_rect из main.py через game
+            scale = self.game.get_scale() if self.game.fullscreen else 1.0
+            screen_rect = self.game.screen.get_rect()
+            surf_w, surf_h = int(WIDTH * scale), int(HEIGHT * scale)
+            surf_rect = pygame.Rect(0, 0, surf_w, surf_h)
+            surf_rect.center = screen_rect.center
+            # Переводим координаты мыши в координаты игрового поля
+            rel_x = (mouse_x - surf_rect.x) / scale
+            rel_y = (mouse_y - surf_rect.y) / scale
+            cam = self.game.camera
+            # Переводим в мировые координаты
+            world_mouse_x = rel_x - cam.offset.x
+            world_mouse_y = rel_y - cam.offset.y
+            px, py = self.rect.center
+            dx = world_mouse_x - px
+            dy = world_mouse_y - py
+            length = (dx ** 2 + dy ** 2) ** 0.5
+            if length == 0:
+                direction = (1, 0)
+            else:
+                direction = (dx / length, dy / length)
+        # Создаём SwingAttack
+        attack = SwingAttack(self.game, self, direction)
         if random.random() < self.critical_chance:
             attack.damage *= 2
-        
-        # Apply attack size
         attack.size_multiplier = self.attack_size_multiplier
-        
-        # Apply explosive attack
         if self.explosive_attack:
             attack.explosive = True
-        
         return attack

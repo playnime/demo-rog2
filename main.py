@@ -28,16 +28,12 @@ def toggle_fullscreen():
 
 clock = pygame.time.Clock()
 
-def get_scale():
-    screen_w, screen_h = screen.get_size()
-    scale_w = screen_w / WIDTH
-    scale_h = screen_h / HEIGHT
-    return min(scale_w, scale_h)
-
 class Game:
     def __init__(self):
         self.state = 'menu'  # 'menu' or 'playing'
         self.upgrade_manager = UpgradeManager()
+        self.fullscreen = fullscreen
+        self.screen = screen
         self.reset_game()
         self.last_spawn_time = pygame.time.get_ticks()
         self.spawn_interval = 5000  # 5 seconds in milliseconds
@@ -125,6 +121,12 @@ class Game:
         elif self.notification_text:
             self.notification_text = ""
 
+    def get_scale(self):
+        screen_w, screen_h = screen.get_size()
+        scale_w = screen_w / WIDTH
+        scale_h = screen_h / HEIGHT
+        return min(scale_w, scale_h)
+
     def run(self):
         running = True
         while running:
@@ -135,6 +137,8 @@ class Game:
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_F11:
                         toggle_fullscreen()
+                        self.fullscreen = fullscreen
+                        self.screen = screen
                 if self.state == 'menu':
                     if event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
                         self.reset_game()
@@ -145,7 +149,6 @@ class Game:
                             attack = self.player.attack()
                             if attack:
                                 self.all_sprites.add(attack)
-                        
                         # Handle upgrade selection
                         if self.upgrade_manager.showing_upgrade_screen:
                             if event.key == pygame.K_1:
@@ -160,6 +163,10 @@ class Game:
                                 selected_upgrade = self.upgrade_manager.select_upgrade(2)
                                 if selected_upgrade:
                                     self.upgrade_manager.apply_upgrade_to_player(self.player, selected_upgrade)
+                    if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                        attack = self.player.attack()
+                        if attack:
+                            self.all_sprites.add(attack)
 
             # --- ALWAYS update and draw the scene ---
             if self.state == 'playing' and not self.upgrade_manager.showing_upgrade_screen:
@@ -198,7 +205,7 @@ class Game:
                 game_surface.blit(s, (0, 0))
                 draw_menu()
             # Scale and center the final surface
-            scale = get_scale() if fullscreen else 1.0
+            scale = self.get_scale() if fullscreen else 1.0
             scaled_surface = pygame.transform.scale(game_surface, (int(WIDTH * scale), int(HEIGHT * scale)))
             screen.fill((0, 0, 0))
             screen_rect = screen.get_rect()

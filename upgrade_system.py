@@ -60,6 +60,7 @@ class UpgradeManager:
             Upgrade("Critical Strike", "20% chance to deal double damage", "critical_chance", 0.2, "epic"),
             Upgrade("Immortality", "10% chance to avoid damage when hit", "dodge_chance", 0.1, "legendary"),
             Upgrade("Explosive Attack", "Attacks explode, damaging nearby enemies", "explosive_attack", 1, "legendary"),
+            Upgrade("Forceful Swing", "Your attacks knock enemies back", "knockback", 1, "uncommon"),
         ]
         return upgrades
     
@@ -119,6 +120,8 @@ class UpgradeManager:
             player.attack_cooldown = max(100, player.attack_cooldown - upgrade.effect_value)
         elif upgrade.effect_type == "attack_size":
             player.attack_size_multiplier += upgrade.effect_value
+            if player.attack_size_multiplier < 0.2:
+                player.attack_size_multiplier = 0.2
         elif upgrade.effect_type == "vampirism":
             player.vampirism = upgrade.effect_value
         elif upgrade.effect_type == "critical_chance":
@@ -127,6 +130,8 @@ class UpgradeManager:
             player.dodge_chance += upgrade.effect_value
         elif upgrade.effect_type == "explosive_attack":
             player.explosive_attack = True
+        elif upgrade.effect_type == "knockback":
+            player.knockback_attack = True
     
     def draw_upgrade_screen(self, screen):
         """Отрисовывает экран выбора улучшений"""
