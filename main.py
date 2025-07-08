@@ -30,7 +30,7 @@ clock = pygame.time.Clock()
 
 class Game:
     def __init__(self):
-        self.state = 'menu'  # 'menu' or 'playing'
+        self.state = 'menu'  # 'menu', 'playing', 'paused'
         self.upgrade_manager = UpgradeManager()
         self.fullscreen = fullscreen
         self.screen = screen
@@ -139,6 +139,11 @@ class Game:
                         toggle_fullscreen()
                         self.fullscreen = fullscreen
                         self.screen = screen
+                    if event.key == pygame.K_p:
+                        if self.state == 'playing':
+                            self.state = 'paused'
+                        elif self.state == 'paused':
+                            self.state = 'playing'
                 if self.state == 'menu':
                     if event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
                         self.reset_game()
@@ -167,6 +172,9 @@ class Game:
                         attack = self.player.attack()
                         if attack:
                             self.all_sprites.add(attack)
+                elif self.state == 'paused':
+                    # В паузе можно только выйти из паузы (по P)
+                    pass
 
             # --- ALWAYS update and draw the scene ---
             if self.state == 'playing' and not self.upgrade_manager.showing_upgrade_screen:
@@ -204,6 +212,25 @@ class Game:
                 s.fill((30, 30, 30))
                 game_surface.blit(s, (0, 0))
                 draw_menu()
+            # Pause overlay
+            if self.state == 'paused':
+                s = pygame.Surface(GAME_SIZE)
+                s.set_alpha(180)
+                s.fill((30, 30, 30))
+                game_surface.blit(s, (0, 0))
+                font = pygame.font.SysFont(None, 80)
+                text = font.render('PAUSED', True, (255, 255, 255))
+                game_surface.blit(text, (WIDTH // 2 - text.get_width() // 2, HEIGHT // 2 - 40))
+                # Controls in pause
+                font_ctrl = pygame.font.SysFont(None, 32)
+                pause_ctrls = [
+                    'P — resume',
+                    'F11 — fullscreen',
+                    'ESC — quit'
+                ]
+                for i, ctrl in enumerate(pause_ctrls):
+                    ctrl_text = font_ctrl.render(ctrl, True, (200, 200, 200))
+                    game_surface.blit(ctrl_text, (WIDTH // 2 - ctrl_text.get_width() // 2, HEIGHT // 2 + 60 + i * 32))
             # Scale and center the final surface
             scale = self.get_scale() if fullscreen else 1.0
             scaled_surface = pygame.transform.scale(game_surface, (int(WIDTH * scale), int(HEIGHT * scale)))
@@ -225,6 +252,19 @@ def draw_menu():
     font_small = pygame.font.SysFont(None, 40)
     play_text = font_small.render('Press ENTER to start', True, (200, 200, 200))
     game_surface.blit(play_text, (WIDTH // 2 - play_text.get_width() // 2, HEIGHT // 2))
+    # Controls
+    font_ctrl = pygame.font.SysFont(None, 28)
+    controls = [
+        'WASD — move',
+        'LMB or SPACE — attack',
+        '1, 2, 3 — choose upgrade',
+        'P — pause',
+        'F11 — fullscreen',
+        'ESC — quit'
+    ]
+    for i, ctrl in enumerate(controls):
+        ctrl_text = font_ctrl.render(ctrl, True, (180, 180, 180))
+        game_surface.blit(ctrl_text, (WIDTH // 2 - ctrl_text.get_width() // 2, HEIGHT // 2 + 50 + i * 28))
 
 if __name__ == '__main__':
     game = Game()
