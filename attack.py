@@ -1,6 +1,7 @@
 import pygame
 import math
 import random
+import os
 from settings import *
 
 class Attack(pygame.sprite.Sprite):
@@ -81,41 +82,117 @@ class SwingAttack(pygame.sprite.Sprite):
         self.spawn_time = pygame.time.get_ticks()
         self.hit_enemies = set()
         self.direction = direction  # (dx, dy) нормализованный вектор
-        # Параметры дуги
+        
+        # --- Анимация атаки ---
+        # Загружаем кадры анимации атаки
+        self.attack_frames = [
+            pygame.image.load(os.path.join("assets", "sword_effect", "attack1.png")).convert_alpha(),
+            pygame.image.load(os.path.join("assets", "sword_effect", "attack2.png")).convert_alpha(),
+            pygame.image.load(os.path.join("assets", "sword_effect", "attack3.png")).convert_alpha(),
+        ]
+        # Масштабируем кадры под размер атаки
+        attack_size = int(TILE_SIZE * 1.5 * self.size_multiplier)  # уменьшили с *3 до *1.5
+        self.attack_frames = [
+            pygame.transform.scale(frame, (attack_size, attack_size)) for frame in self.attack_frames
+        ]
+        # Создаём кадры для всех 4 направлений
+        self.attack_frames_right = self.attack_frames  # оригинальные кадры для атаки вправо
+        self.attack_frames_left = [
+            pygame.transform.flip(frame, True, False) for frame in self.attack_frames
+        ]  # зеркальные для атаки влево
+        self.attack_frames_down = [
+            pygame.transform.rotate(frame, -90) for frame in self.attack_frames
+        ]  # повёрнутые на 90° для атаки вниз
+        self.attack_frames_up = [
+            pygame.transform.rotate(frame, 90) for frame in self.attack_frames
+        ]  # повёрнутые на -90° для атаки вверх
+        
+        # Переменные анимации
+        self.current_frame = 0
+        self.animation_timer = 0
+        self.animation_speed = 0.06  # скорость переключения кадров (60мс на кадр)
+        
+        # Определяем направление атаки
+        dx, dy = direction
+        # Определяем основное направление по наибольшей компоненте
+        if abs(dx) > abs(dy):
+            # Горизонтальное движение
+            self.attack_direction = "right" if dx > 0 else "left"
+        else:
+            # Вертикальное движение
+            self.attack_direction = "down" if dy > 0 else "up"
+        
+        # Начальный кадр
+        if self.attack_direction == "right":
+            self.image = self.attack_frames_right[0]
+        elif self.attack_direction == "left":
+            self.image = self.attack_frames_left[0]
+        elif self.attack_direction == "down":
+            self.image = self.attack_frames_down[0]
+        else:  # up
+            self.image = self.attack_frames_up[0]
+        
+        self.rect = self.image.get_rect()
+        # Позиционируем атаку так, чтобы край был привязан к персонажу
+        px, py = player.rect.center
+        if self.attack_direction == "right":
+            # Для атаки вправо - левый край анимации у персонажа
+            self.rect.midleft = (px, py)
+        elif self.attack_direction == "left":
+            # Для атаки влево - правый край анимации у персонажа
+            self.rect.midright = (px, py)
+        elif self.attack_direction == "down":
+            # Для атаки вниз - верхний край анимации у персонажа
+            self.rect.midtop = (px, py)
+        else:  # up
+            # Для атаки вверх - нижний край анимации у персонажа
+            self.rect.midbottom = (px, py)
+        
+        # Параметры дуги для проверки попадания (оставляем для логики)
         self.arc_angle = math.radians(90)  # угол дуги (90 градусов)
         self.arc_radius = int(TILE_SIZE * 2 * self.size_multiplier)
-        self.arc_width = int(TILE_SIZE * 0.7 * self.size_multiplier)
-        # Центр дуги = центр игрока
-        px, py = player.rect.center
-        # Размер изображения
-        img_size = self.arc_radius * 2
-        self.image = pygame.Surface((img_size, img_size), pygame.SRCALPHA)
-        # Нарисовать дугу (меч) — центр surface совпадает с px, py
-        dx, dy = direction
-        swing_dir_angle = -math.atan2(dy, dx)
-        # В pygame.draw.arc 0 — вправо, против часовой стрелки
-        # Центр окружности: (img_size//2, img_size//2)
-        arc_rect = (0, 0, img_size, img_size)
-        start_angle = swing_dir_angle - self.arc_angle / 2
-        end_angle = swing_dir_angle + self.arc_angle / 2
-        pygame.draw.arc(
-            self.image,
-            (0, 180, 255, 180),
-            arc_rect,
-            start_angle,
-            end_angle,
-            self.arc_width
-        )
-        self.rect = self.image.get_rect()
-        self.rect.center = (px, py)
 
     def update(self):
         now = pygame.time.get_ticks()
         if now - self.spawn_time > self.duration:
             self.kill()
             return
+        
+        # --- Анимация атаки ---
+        dt = 1 / 60  # Предполагаем 60 FPS
+        self.animation_timer += dt
+        if self.animation_timer >= self.animation_speed:
+            self.animation_timer = 0
+            self.current_frame += 1
+            # Если анимация закончилась, останавливаемся на последнем кадре
+            if self.current_frame >= len(self.attack_frames):
+                self.current_frame = len(self.attack_frames) - 1
+        
+        # Обновляем кадр анимации
+        if self.attack_direction == "right":
+            self.image = self.attack_frames_right[self.current_frame]
+        elif self.attack_direction == "left":
+            self.image = self.attack_frames_left[self.current_frame]
+        elif self.attack_direction == "down":
+            self.image = self.attack_frames_down[self.current_frame]
+        else:  # up
+            self.image = self.attack_frames_up[self.current_frame]
+        
+        # Обновляем позицию атаки относительно игрока
         px, py = self.player.rect.center
-        self.rect.center = (px, py)
+        if self.attack_direction == "right":
+            # Для атаки вправо - левый край анимации у персонажа
+            self.rect.midleft = (px, py)
+        elif self.attack_direction == "left":
+            # Для атаки влево - правый край анимации у персонажа
+            self.rect.midright = (px, py)
+        elif self.attack_direction == "down":
+            # Для атаки вниз - верхний край анимации у персонажа
+            self.rect.midtop = (px, py)
+        else:  # up
+            # Для атаки вверх - нижний край анимации у персонажа
+            self.rect.midbottom = (px, py)
+        
         dx, dy = self.direction
         swing_dir_angle = -math.atan2(dy, dx)
         # Проверка попадания по дуге
