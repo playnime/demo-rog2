@@ -46,23 +46,14 @@ class Game:
     def reset_game(self):
         self.all_sprites = pygame.sprite.Group()
         self.enemies = pygame.sprite.Group()
-        # Get map size (default 8x6)
-        map_width, map_height = 8, 6
-        if hasattr(self, 'map') and hasattr(self.map, 'width') and hasattr(self.map, 'height'):
-            map_width = self.map.width
-            map_height = self.map.height
-        elif hasattr(self, 'map') and hasattr(self.map, 'tiles') and self.map.tiles:
-            # If there are tiles, determine size by them
-            max_x = max(tile.rect.x for tile in self.map.tiles) // TILE_SIZE
-            max_y = max(tile.rect.y for tile in self.map.tiles) // TILE_SIZE
-            map_width = max_x + 1
-            map_height = max_y + 1
+        # Load map from Lua file
+        self.map = Map(self, lua_map_path="assets/map/final_map.lua")
+        map_width = self.map.width
+        map_height = self.map.height
         # Center of the map
         player_x = map_width // 2
         player_y = map_height // 2
         self.player = Player(self, player_x, player_y)
-        # Load map from Lua file
-        self.map = Map(self, lua_map_path="assets/map/final_map.lua")
         self.camera = Camera(WIDTH, HEIGHT)
         self.enemy = BasicEnemy(self, 5, 5)
         self.all_sprites.add(self.enemy)
@@ -198,9 +189,22 @@ class Game:
 
             # Draw everything on game_surface
             game_surface.fill((0, 0, 0))
-            # Map
-            for tile in self.map.tiles:
-                game_surface.blit(tile.image, self.camera.apply(tile))
+            # Map (optimized: draw from tile_ids, not sprites)
+            cam_left = -self.camera.offset.x
+            cam_top = -self.camera.offset.y
+            cam_right = cam_left + WIDTH
+            cam_bottom = cam_top + HEIGHT
+            tile_left = max(0, int(cam_left // TILE_SIZE) - 1)
+            tile_top = max(0, int(cam_top // TILE_SIZE) - 1)
+            tile_right = min(self.map.width, int(cam_right // TILE_SIZE) + 2)
+            tile_bottom = min(self.map.height, int(cam_bottom // TILE_SIZE) + 2)
+            for y in range(tile_top, tile_bottom):
+                for x in range(tile_left, tile_right):
+                    tile_id = self.map.get_tile_id(x, y)
+                    if tile_id >= 0:
+                        tile_img = self.map.get_tile_image(tile_id)
+                        tile_rect = pygame.Rect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE)
+                        game_surface.blit(tile_img, self.camera.apply(type('obj', (), {'rect': tile_rect})))
             # Sprites
             for sprite in self.all_sprites:
                 if sprite is not self.player:
