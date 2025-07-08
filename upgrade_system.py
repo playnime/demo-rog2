@@ -3,12 +3,13 @@ import random
 from settings import *
 
 class Upgrade:
-    def __init__(self, name, description, effect_type, effect_value, rarity="common"):
+    def __init__(self, name, description, effect_type, effect_value, rarity="common", unique=False):
         self.name = name
         self.description = description
         self.effect_type = effect_type
         self.effect_value = effect_value
         self.rarity = rarity
+        self.unique = unique
         self.color = self.get_rarity_color()
     
     def get_rarity_color(self):
@@ -36,31 +37,31 @@ class UpgradeManager:
         """Creates the pool of all possible upgrades"""
         upgrades = [
             # Health upgrades
-            Upgrade("Iron Heart", "Increases max health by 25", "max_health", 25, "common"),
-            Upgrade("Titanium Heart", "Increases max health by 50", "max_health", 50, "uncommon"),
-            Upgrade("Divine Heart", "Increases max health by 100", "max_health", 100, "rare"),
+            Upgrade("Iron Heart", "Increases max health by 25", "max_health", 25, "common", unique=False),
+            Upgrade("Titanium Heart", "Increases max health by 50", "max_health", 50, "uncommon", unique=False),
+            Upgrade("Divine Heart", "Increases max health by 100", "max_health", 100, "rare", unique=False),
             # Speed upgrades
-            Upgrade("Fast Legs", "Increases movement speed by 0.5", "speed", 0.5, "common"),
-            Upgrade("Wind Speed", "Increases movement speed by 1.0", "speed", 1.0, "uncommon"),
-            Upgrade("Lightning", "Increases movement speed by 2.0", "speed", 2.0, "rare"),
+            Upgrade("Fast Legs", "Increases movement speed by 0.5", "speed", 0.5, "common", unique=False),
+            Upgrade("Wind Speed", "Increases movement speed by 1.0", "speed", 1.0, "uncommon", unique=False),
+            Upgrade("Lightning", "Increases movement speed by 2.0", "speed", 2.0, "rare", unique=False),
             # Attack upgrades
-            Upgrade("Sharp Sword", "Increases attack damage by 5", "attack_damage", 5, "common"),
-            Upgrade("Bloody Blade", "Increases attack damage by 10", "attack_damage", 10, "uncommon"),
-            Upgrade("Excalibur", "Increases attack damage by 20", "attack_damage", 20, "rare"),
+            Upgrade("Sharp Sword", "Increases attack damage by 5", "attack_damage", 5, "common", unique=False),
+            Upgrade("Bloody Blade", "Increases attack damage by 10", "attack_damage", 10, "uncommon", unique=False),
+            Upgrade("Excalibur", "Increases attack damage by 20", "attack_damage", 20, "rare", unique=False),
             # Attack speed upgrades
-            Upgrade("Quick Hand", "Reduces attack delay by 100ms", "attack_speed", 100, "common"),
-            Upgrade("Sword Master", "Reduces attack delay by 200ms", "attack_speed", 200, "uncommon"),
-            Upgrade("Berserk", "Reduces attack delay by 300ms", "attack_speed", 300, "rare"),
+            Upgrade("Quick Hand", "Reduces attack delay by 100ms", "attack_speed", 100, "common", unique=False),
+            Upgrade("Sword Master", "Reduces attack delay by 200ms", "attack_speed", 200, "uncommon", unique=False),
+            Upgrade("Berserk", "Reduces attack delay by 300ms", "attack_speed", 300, "rare", unique=False),
             # Attack size upgrades
-            Upgrade("Long Sword", "Increases attack size by 10%", "attack_size", 0.1, "common"),
-            Upgrade("Giant Blade", "Increases attack size by 20%", "attack_size", 0.2, "uncommon"),
-            Upgrade("Cosmic Sword", "Increases attack size by 50%", "attack_size", 0.5, "rare"),
+            Upgrade("Long Sword", "Increases attack size by 10%", "attack_size", 0.1, "common", unique=False),
+            Upgrade("Giant Blade", "Increases attack size by 20%", "attack_size", 0.2, "uncommon", unique=False),
+            Upgrade("Cosmic Sword", "Increases attack size by 50%", "attack_size", 0.5, "rare", unique=False),
             # Special upgrades
-            Upgrade("Vampirism", "Restores 5 health per kill", "vampirism", 5, "epic"),
-            Upgrade("Critical Strike", "20% chance to deal double damage", "critical_chance", 0.2, "epic"),
-            Upgrade("Immortality", "10% chance to avoid damage when hit", "dodge_chance", 0.1, "legendary"),
-            Upgrade("Explosive Attack", "Attacks explode, damaging nearby enemies", "explosive_attack", 1, "legendary"),
-            Upgrade("Forceful Swing", "Your attacks knock enemies back", "knockback", 1, "uncommon"),
+            Upgrade("Vampirism", "Restores 5 health per kill", "vampirism", 5, "epic", unique=True),
+            Upgrade("Critical Strike", "20% chance to deal double damage", "critical_chance", 0.2, "epic", unique=True),
+            Upgrade("Immortality", "10% chance to avoid damage when hit", "dodge_chance", 0.1, "legendary", unique=True),
+            Upgrade("Explosive Attack", "Attacks explode, damaging nearby enemies", "explosive_attack", 1, "legendary", unique=True),
+            Upgrade("Forceful Swing", "Your attacks knock enemies back", "knockback", 1, "uncommon", unique=True),
         ]
         return upgrades
     
@@ -87,14 +88,16 @@ class UpgradeManager:
     
     def get_random_upgrades(self, count):
         """Возвращает случайные улучшения для выбора"""
-        # Фильтруем улучшения, которые еще не взяты
-        available = [upgrade for upgrade in self.available_upgrades 
-                    if upgrade not in self.player_upgrades]
-        
+        # Фильтруем: уникальные апгрейды — только если не взяты, неуникальные — всегда
+        available = []
+        for upgrade in self.available_upgrades:
+            if upgrade.unique:
+                if upgrade not in self.player_upgrades:
+                    available.append(upgrade)
+            else:
+                available.append(upgrade)
         if len(available) < count:
-            # Если доступных улучшений мало, добавляем уже взятые
             available = self.available_upgrades.copy()
-        
         return random.sample(available, min(count, len(available)))
     
     def select_upgrade(self, upgrade_index):
