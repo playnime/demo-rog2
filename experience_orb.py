@@ -1,6 +1,7 @@
 import pygame
 import os
 from settings import *
+from sound_settings import get_volume_multiplier
 
 class ExperienceOrb(pygame.sprite.Sprite):
     def __init__(self, game, x, y):
@@ -52,6 +53,9 @@ class Carrot(pygame.sprite.Sprite):
         # Check collision with player
         if self.rect.colliderect(self.game.player.rect):
             if self.exp_sound:
+                # Применяем коэффициент громкости
+                volume_multiplier = get_volume_multiplier()
+                self.exp_sound.set_volume(0.3 * volume_multiplier)
                 self.exp_sound.play()
             self.game.upgrade_manager.on_experience_orb_collected()
             self.kill() 

@@ -4,6 +4,7 @@ import random
 from attack import Attack, SwingAttack, PiercingCarrot
 import os
 import math
+from sound_settings import get_volume_multiplier
 
 class Player(pygame.sprite.Sprite):
     def __init__(self, game, x, y):
@@ -179,6 +180,9 @@ class Player(pygame.sprite.Sprite):
             if self.walk_sound:
                 now = pygame.time.get_ticks()
                 if now - self.last_walk_sound_time > self.walk_sound_cooldown:
+                    # Применяем коэффициент громкости
+                    volume_multiplier = get_volume_multiplier()
+                    self.walk_sound.set_volume(0.04 * volume_multiplier)
                     self.walk_sound.play()
                     self.last_walk_sound_time = now
         else:
@@ -236,12 +240,13 @@ class Player(pygame.sprite.Sprite):
                     angle = self.magic_carrots_angle + i * (2 * math.pi / self.magic_carrots_count)
                     carrot_x = px + radius * math.cos(angle)
                     carrot_y = py + radius * math.sin(angle)
-                    carrot_rect = self.magic_carrots_image.get_rect(center=(carrot_x, carrot_y))
-                    for enemy in self.game.enemies:
-                        if carrot_rect.colliderect(enemy.rect):
-                            if not hasattr(enemy, f'carrot_last_hit_{i}') or now - getattr(enemy, f'carrot_last_hit_{i}', 0) > 300:
-                                enemy.take_damage(5)
-                                setattr(enemy, f'carrot_last_hit_{i}', now)
+                    if self.magic_carrots_image:
+                        carrot_rect = self.magic_carrots_image.get_rect(center=(carrot_x, carrot_y))
+                        for enemy in self.game.enemies:
+                            if carrot_rect.colliderect(enemy.rect):
+                                if not hasattr(enemy, f'carrot_last_hit_{i}') or now - getattr(enemy, f'carrot_last_hit_{i}', 0) > 300:
+                                    enemy.take_damage(5)
+                                    setattr(enemy, f'carrot_last_hit_{i}', now)
         
         # --- Piercing Carrot update ---
         if self.piercing_carrot:
@@ -395,6 +400,9 @@ class Player(pygame.sprite.Sprite):
         
         # Воспроизводим звук меча сразу при нажатии
         if self.sword_sound:
+            # Применяем коэффициент громкости
+            volume_multiplier = get_volume_multiplier()
+            self.sword_sound.set_volume(0.3 * volume_multiplier)
             self.sword_sound.play()
         
         return None  # Пока не создаём атаку, только планируем её

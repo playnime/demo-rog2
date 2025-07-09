@@ -2,6 +2,7 @@ import pygame
 import random
 from settings import *
 import os
+from sound_settings import get_volume_multiplier
 
 class Upgrade:
     def __init__(self, name, description, effect_type, effect_value, rarity="common", unique=False):
@@ -67,6 +68,9 @@ class UpgradeManager:
             # Воспроизводим звук повышения уровня с небольшой задержкой
             if self.lvlup_sound:
                 pygame.time.wait(50)  # Небольшая задержка в 50мс
+                # Применяем коэффициент громкости
+                volume_multiplier = get_volume_multiplier()
+                self.lvlup_sound.set_volume(0.1 * volume_multiplier)
                 self.lvlup_sound.play()
             self.show_upgrade_screen()
             self.current_kills = 0

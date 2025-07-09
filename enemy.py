@@ -4,6 +4,7 @@ import random
 import math
 from experience_orb import ExperienceOrb, Carrot
 import os
+from sound_settings import get_volume_multiplier
 
 def create_enemy_image(color, size=TILE_SIZE):
     """Creates an enemy image of the given color"""
@@ -181,6 +182,9 @@ class Enemy(pygame.sprite.Sprite):
         if self.health <= 0:
             self.kill()
         if self.hit_sound:
+            # Применяем коэффициент громкости
+            volume_multiplier = get_volume_multiplier()
+            self.hit_sound.set_volume(0.1 * volume_multiplier)
             self.hit_sound.play()
 
     def _update_base_image(self):

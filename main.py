@@ -11,6 +11,7 @@ from attack import Attack, PiercingCarrot, LightningAttack
 from utils import draw_health_bar
 from upgrade_system import UpgradeManager
 from experience_orb import ExperienceOrb, Carrot
+from sound_settings import apply_volume_to_sounds, get_effects_volume
 
 pygame.init()
 pygame.mixer.init()  # Инициализация звуковой системы
@@ -20,6 +21,216 @@ fullscreen = False
 GAME_SIZE = (WIDTH, HEIGHT)
 game_surface = pygame.Surface(GAME_SIZE)
 font_fps = pygame.font.SysFont(None, 24)
+
+# Загрузка изображений меню
+try:
+    menu_background = pygame.image.load("assets/menu/menu_background.jpg").convert()
+    menu_title = pygame.image.load("assets/menu/menu_game_title.png").convert_alpha()
+    menu_start_btn = pygame.image.load("assets/menu/menu_start.png").convert_alpha()
+    menu_settings_btn = pygame.image.load("assets/menu/menu_settings.png").convert_alpha()
+    menu_leave_btn = pygame.image.load("assets/menu/menu_leave.png").convert_alpha()
+except pygame.error as e:
+    print(f"Ошибка загрузки изображений меню: {e}")
+    # Создаём заглушки если изображения не найдены
+    menu_background = pygame.Surface((WIDTH, HEIGHT))
+    menu_background.fill((50, 50, 100))
+    menu_title = pygame.Surface((300, 100))
+    menu_title.fill((255, 255, 255))
+    menu_start_btn = pygame.Surface((200, 60))
+    menu_start_btn.fill((0, 255, 0))
+    menu_settings_btn = pygame.Surface((200, 60))
+    menu_settings_btn.fill((255, 255, 0))
+    menu_leave_btn = pygame.Surface((200, 60))
+    menu_leave_btn.fill((255, 0, 0))
+
+# Масштабирование изображений под размер экрана
+def scale_menu_images():
+    global menu_background, menu_title, menu_start_btn, menu_settings_btn, menu_leave_btn
+    # Масштабируем фоновое изображение
+    menu_background = pygame.transform.scale(menu_background, (WIDTH, HEIGHT))
+    # Масштабируем заголовок (примерно 1/3 ширины экрана)
+    title_width = WIDTH // 3
+    title_height = int(title_width * menu_title.get_height() / menu_title.get_width())
+    menu_title = pygame.transform.scale(menu_title, (title_width, title_height))
+    # Масштабируем кнопки (примерно 1/4 ширины экрана)
+    btn_width = WIDTH // 4
+    btn_height = int(btn_width * menu_start_btn.get_height() / menu_start_btn.get_width())
+    menu_start_btn = pygame.transform.scale(menu_start_btn, (btn_width, btn_height))
+    menu_settings_btn = pygame.transform.scale(menu_settings_btn, (btn_width, btn_height))
+    menu_leave_btn = pygame.transform.scale(menu_leave_btn, (btn_width, btn_height))
+
+scale_menu_images()
+
+class MenuManager:
+    def __init__(self):
+        self.state = 'main'  # 'main', 'settings'
+        self.effects_volume_percent = 70  # Громкость эффектов в процентах (0-100)
+        self.slider_rect = pygame.Rect(WIDTH // 2 - 100, HEIGHT // 2 + 50, 200, 20)
+        # Инициализируем ручку слайдера в правильной позиции
+        self.update_slider_handle_position()
+        self.dragging_slider = False
+    
+    def update_slider_handle_position(self):
+        """Обновляет позицию ручки слайдера в соответствии с текущей громкостью"""
+        handle_x = self.slider_rect.left + int((self.effects_volume_percent / 100.0) * self.slider_rect.width)
+        self.slider_handle_rect = pygame.Rect(handle_x - 5, self.slider_rect.centery - 15, 10, 30)
+    
+    def update_volume_from_mouse_pos(self, mouse_x):
+        """Обновляет громкость на основе позиции мыши"""
+        # Ограничиваем позицию мыши границами слайдера
+        slider_x = max(self.slider_rect.left, min(self.slider_rect.right, mouse_x))
+        # Вычисляем громкость в процентах (0-100)
+        volume_percent = (slider_x - self.slider_rect.left) / self.slider_rect.width * 100
+        self.effects_volume_percent = max(0, min(100, int(volume_percent)))
+        # Обновляем позицию ручки
+        self.update_slider_handle_position()
+        # Применяем новую громкость
+        apply_volume_to_sounds(self.effects_volume_percent)
+        
+    def handle_click(self, pos):
+        # Преобразуем координаты мыши для полноэкранного режима
+        adjusted_pos = self.adjust_mouse_pos(pos)
+        
+        if self.state == 'main':
+            # Проверяем клики по кнопкам
+            title_y = HEIGHT // 2 - 200  # Обновлено под новую позицию заголовка
+            btn_y = HEIGHT // 2 + 40  # Обновлено под новую позицию кнопок
+            btn_spacing = 140  # Обновлено под новое расстояние
+            
+            # Кнопка Start
+            start_rect = menu_start_btn.get_rect(center=(WIDTH // 2, btn_y))
+            if start_rect.collidepoint(adjusted_pos):
+                return 'start_game'
+            
+            # Кнопка Settings
+            settings_rect = menu_settings_btn.get_rect(center=(WIDTH // 2, btn_y + btn_spacing))
+            if settings_rect.collidepoint(adjusted_pos):
+                self.state = 'settings'
+                return None
+            
+            # Кнопка Leave (оставляем на прежнем месте)
+            leave_rect = menu_leave_btn.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 320))
+            if leave_rect.collidepoint(adjusted_pos):
+                return 'quit_game'
+                
+        elif self.state == 'settings':
+            # Проверяем клик по слайдеру (по ручке или по самому слайдеру)
+            if self.slider_handle_rect.collidepoint(adjusted_pos) or self.slider_rect.collidepoint(adjusted_pos):
+                self.dragging_slider = True
+                # Если кликнули по слайдеру, а не по ручке, сразу обновляем позицию
+                if not self.slider_handle_rect.collidepoint(adjusted_pos):
+                    self.update_volume_from_mouse_pos(adjusted_pos[0])
+            # Кнопка "Назад"
+            back_rect = pygame.Rect(WIDTH // 2 - 50, HEIGHT // 2 + 150, 100, 40)
+            if back_rect.collidepoint(adjusted_pos):
+                self.state = 'main'
+                return None
+                
+        return None
+    
+    def adjust_mouse_pos(self, pos):
+        """Преобразует координаты мыши для полноэкранного режима"""
+        # Получаем размеры экрана и масштаб
+        screen_w, screen_h = pygame.display.get_surface().get_size()
+        scale_w = screen_w / WIDTH
+        scale_h = screen_h / HEIGHT
+        scale = min(scale_w, scale_h)
+        
+        # Вычисляем отступы для центрирования
+        scaled_w = int(WIDTH * scale)
+        scaled_h = int(HEIGHT * scale)
+        offset_x = (screen_w - scaled_w) // 2
+        offset_y = (screen_h - scaled_h) // 2
+        
+        # Преобразуем координаты мыши
+        adjusted_x = (pos[0] - offset_x) / scale
+        adjusted_y = (pos[1] - offset_y) / scale
+        
+        return (adjusted_x, adjusted_y)
+    
+    def handle_mouse_motion(self, pos):
+        if self.state == 'settings' and self.dragging_slider:
+            # Обновляем громкость на основе позиции мыши
+            adjusted_pos = self.adjust_mouse_pos(pos)
+            self.update_volume_from_mouse_pos(adjusted_pos[0])
+    
+    def handle_mouse_up(self):
+        self.dragging_slider = False
+    
+    def draw(self, surface):
+        if self.state == 'main':
+            self.draw_main_menu(surface)
+        elif self.state == 'settings':
+            self.draw_settings_menu(surface)
+    
+    def draw_main_menu(self, surface):
+        # Фоновое изображение
+        surface.blit(menu_background, (0, 0))
+        
+        # Заголовок игры (подняли выше)
+        title_rect = menu_title.get_rect(center=(WIDTH // 2, HEIGHT // 2 - 200))
+        surface.blit(menu_title, title_rect)
+        
+        # Кнопки (сделали более обособленными)
+        btn_y = HEIGHT // 2 + 40  # Подняли кнопки выше
+        btn_spacing = 140  # Увеличили расстояние между кнопками
+        
+        # Кнопка Start
+        start_rect = menu_start_btn.get_rect(center=(WIDTH // 2, btn_y))
+        surface.blit(menu_start_btn, start_rect)
+        
+        # Кнопка Settings
+        settings_rect = menu_settings_btn.get_rect(center=(WIDTH // 2, btn_y + btn_spacing))
+        surface.blit(menu_settings_btn, settings_rect)
+        
+        # Кнопка Leave (оставляем на прежнем месте)
+        leave_rect = menu_leave_btn.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 320))
+        surface.blit(menu_leave_btn, leave_rect)
+    
+    def draw_settings_menu(self, surface):
+        # Полупрозрачный фон
+        overlay = pygame.Surface((WIDTH, HEIGHT))
+        overlay.set_alpha(180)
+        overlay.fill((0, 0, 0))
+        surface.blit(overlay, (0, 0))
+        
+        # Заголовок настроек
+        font = pygame.font.SysFont(None, 60)
+        title = font.render('НАСТРОЙКИ', True, (255, 255, 255))
+        title_rect = title.get_rect(center=(WIDTH // 2, HEIGHT // 2 - 100))
+        surface.blit(title, title_rect)
+        
+        # Громкость эффектов
+        font_small = pygame.font.SysFont(None, 36)
+        volume_text = font_small.render('Громкость эффектов:', True, (255, 255, 255))
+        volume_rect = volume_text.get_rect(center=(WIDTH // 2, HEIGHT // 2))
+        surface.blit(volume_text, volume_rect)
+        
+        # Слайдер
+        # Фон слайдера
+        pygame.draw.rect(surface, (80, 80, 80), self.slider_rect)
+        pygame.draw.rect(surface, (120, 120, 120), self.slider_rect, 2)
+        
+        # Заполненная часть слайдера (показывает текущую громкость)
+        filled_width = int((self.effects_volume_percent / 100.0) * self.slider_rect.width)
+        filled_rect = pygame.Rect(self.slider_rect.left, self.slider_rect.top, filled_width, self.slider_rect.height)
+        pygame.draw.rect(surface, (0, 150, 255), filled_rect)
+        
+        # Ручка слайдера
+        pygame.draw.rect(surface, (255, 255, 255), self.slider_handle_rect)
+        pygame.draw.rect(surface, (200, 200, 200), self.slider_handle_rect, 2)
+        
+        # Значение громкости
+        volume_value = font_small.render(f'{self.effects_volume_percent}%', True, (255, 255, 255))
+        value_rect = volume_value.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 80))
+        surface.blit(volume_value, value_rect)
+        
+        # Кнопка "Назад"
+        back_rect = pygame.Rect(WIDTH // 2 - 50, HEIGHT // 2 + 150, 100, 40)
+        pygame.draw.rect(surface, (100, 100, 100), back_rect)
+        back_text = font_small.render('Назад', True, (255, 255, 255))
+        back_text_rect = back_text.get_rect(center=back_rect.center)
+        surface.blit(back_text, back_text_rect)
 
 def toggle_fullscreen():
     global screen, fullscreen
@@ -34,6 +245,7 @@ clock = pygame.time.Clock()
 class Game:
     def __init__(self):
         self.state = 'menu'  # 'menu', 'playing', 'paused', 'game_over'
+        self.menu_manager = MenuManager()  # Новый менеджер меню
         self.upgrade_manager = UpgradeManager()
         self.fullscreen = fullscreen
         self.screen = screen
@@ -223,9 +435,18 @@ class Game:
                         elif self.state == 'paused':
                             self.state = 'playing'
                 if self.state == 'menu':
-                    if event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
-                        self.reset_game()
-                        self.state = 'playing'
+                    # Обработка событий мыши для меню
+                    if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                        action = self.menu_manager.handle_click(event.pos)
+                        if action == 'start_game':
+                            self.reset_game()
+                            self.state = 'playing'
+                        elif action == 'quit_game':
+                            running = False
+                    elif event.type == pygame.MOUSEBUTTONUP:
+                        self.menu_manager.handle_mouse_up()
+                    elif event.type == pygame.MOUSEMOTION:
+                        self.menu_manager.handle_mouse_motion(event.pos)
                 elif self.state == 'playing':
                     if event.type == pygame.KEYDOWN:
                         if event.key == pygame.K_SPACE:
@@ -313,11 +534,7 @@ class Game:
             self.draw_fps(game_surface, clock)
             # Menu
             if self.state == 'menu':
-                s = pygame.Surface(GAME_SIZE)
-                s.set_alpha(180)
-                s.fill((30, 30, 30))
-                game_surface.blit(s, (0, 0))
-                draw_menu()
+                self.menu_manager.draw(game_surface)
             # Pause overlay
             if self.state == 'paused':
                 s = pygame.Surface(GAME_SIZE)
@@ -360,27 +577,7 @@ class Game:
                 for orb in collected:
                     self.upgrade_manager.on_experience_orb_collected()
 
-def draw_menu():
-    game_surface.fill((30, 30, 30))
-    font = pygame.font.SysFont(None, 60)
-    text = font.render('ДЕМО ROG', True, (255, 255, 255))
-    game_surface.blit(text, (WIDTH // 2 - text.get_width() // 2, HEIGHT // 2 - 100))
-    font_small = pygame.font.SysFont(None, 40)
-    play_text = font_small.render('Нажмите ENTER для начала', True, (200, 200, 200))
-    game_surface.blit(play_text, (WIDTH // 2 - play_text.get_width() // 2, HEIGHT // 2))
-    # Controls
-    font_ctrl = pygame.font.SysFont(None, 28)
-    controls = [
-        'WASD — движение',
-        'ЛКМ или ПРОБЕЛ — атака',
-        '1, 2, 3 — выбор улучшения',
-        'P — пауза',
-        'F11 — полноэкранный режим',
-        'ESC — выйти'
-    ]
-    for i, ctrl in enumerate(controls):
-        ctrl_text = font_ctrl.render(ctrl, True, (180, 180, 180))
-        game_surface.blit(ctrl_text, (WIDTH // 2 - ctrl_text.get_width() // 2, HEIGHT // 2 + 50 + i * 28))
+
 
 if __name__ == '__main__':
     game = Game()
