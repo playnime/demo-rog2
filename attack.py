@@ -229,3 +229,88 @@ class SwingAttack(pygame.sprite.Sprite):
                     result = self.game.upgrade_manager.on_enemy_killed()
                     if result == "spawn_boss":
                         self.game.spawn_boss()
+
+class PiercingCarrot(pygame.sprite.Sprite):
+    def __init__(self, game, player, direction):
+        super().__init__()
+        self.game = game
+        self.player = player
+        self.direction = direction  # (dx, dy) нормализованный вектор
+        self.speed = 8  # Скорость полета морковки
+        self.damage = 20  # Урон морковки
+        self.duration = 3000  # 3 секунды жизни
+        self.spawn_time = pygame.time.get_ticks()
+        self.hit_enemies = set()  # Список уже пораженных врагов
+        
+        # Загружаем изображение морковки
+        try:
+            img = pygame.image.load(os.path.join("assets", "carrot.png")).convert_alpha()
+            # Растягиваем в 2 раза вдоль оси x = y (диагональное растяжение)
+            original_width = img.get_width() // 2
+            original_height = img.get_height() // 2
+            # Вычисляем новые размеры для диагонального растяжения
+            diagonal_length = math.sqrt(original_width**2 + original_height**2)
+            new_diagonal_length = diagonal_length * 2
+            # Вычисляем новые размеры
+            scale_factor = new_diagonal_length / diagonal_length
+            new_width = int(original_width * scale_factor)
+            new_height = int(original_height * scale_factor)
+            self.image = pygame.transform.scale(img, (new_width, new_height))
+            
+            # Делаем морковку серого цвета
+            gray_surface = pygame.Surface(self.image.get_size(), pygame.SRCALPHA)
+            gray_surface.fill((150, 150, 150, 255))  # Серый цвет
+            self.image.blit(gray_surface, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
+        except Exception:
+            self.image = pygame.Surface((32, 16), pygame.SRCALPHA)  # Увеличиваем размер
+            pygame.draw.ellipse(self.image, (150, 150, 150), (0, 0, 32, 8))
+        
+        # Поворачиваем морковку на 135 градусов
+        self.image = pygame.transform.rotate(self.image, 135)
+        
+        self.rect = self.image.get_rect()
+        # Позиционируем морковку у игрока
+        self.rect.center = player.rect.center
+        self.x = float(self.rect.centerx)
+        self.y = float(self.rect.centery)
+        
+        # Поворачиваем морковку в направлении полета
+        angle = math.degrees(math.atan2(-direction[1], direction[0]))
+        self.image = pygame.transform.rotate(self.image, angle)
+
+    def update(self):
+        now = pygame.time.get_ticks()
+        if now - self.spawn_time > self.duration:
+            self.kill()
+            return
+        
+        # Двигаем морковку
+        dx = self.direction[0] * self.speed
+        dy = self.direction[1] * self.speed
+        self.x += dx
+        self.y += dy
+        self.rect.center = (int(self.x), int(self.y))
+        
+        # Проверяем столкновения с врагами
+        for enemy in self.game.enemies:
+            if enemy not in self.hit_enemies:
+                if self.rect.colliderect(enemy.rect):
+                    enemy.take_damage(self.damage)
+                    self.hit_enemies.add(enemy)
+                    # Вызываем метод убийства врага для системы прокачки
+                    if enemy.health <= 0:
+                        self.player.on_kill_enemy()
+                        result = self.game.upgrade_manager.on_enemy_killed()
+                        if result == "spawn_boss":
+                            self.game.spawn_boss()
+                    # Морковка исчезает после попадания
+                    self.kill()
+                    return
+        
+        # Проверяем, не вышла ли морковка за границы карты
+        map_width = self.game.map.width * TILE_SIZE
+        map_height = self.game.map.height * TILE_SIZE
+        if (self.x < 0 or self.x > map_width or 
+            self.y < 0 or self.y > map_height):
+            self.kill()
+            return

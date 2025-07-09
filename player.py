@@ -1,7 +1,7 @@
 import pygame
 from settings import *
 import random
-from attack import Attack, SwingAttack
+from attack import Attack, SwingAttack, PiercingCarrot
 import os
 import math
 
@@ -64,6 +64,7 @@ class Player(pygame.sprite.Sprite):
         self.dodge_chance = 0
         self.explosive_attack = False
         self.knockback_attack = False
+        self.piercing_carrot = False  # Новое улучшение
         
         # --- Magic Carrots ---
         self.magic_carrots_active = False
@@ -81,6 +82,17 @@ class Player(pygame.sprite.Sprite):
         except Exception:
             self.magic_carrots_image = pygame.Surface((48, 48), pygame.SRCALPHA)
             pygame.draw.ellipse(self.magic_carrots_image, (80, 180, 255), (0, 0, 48, 24))
+        
+        # --- Piercing Carrot ---
+        self.piercing_carrot_last_time = 0
+        self.piercing_carrot_cooldown = 2000  # 2 секунды
+        self.piercing_carrot_image = None
+        try:
+            img = pygame.image.load(os.path.join("assets", "carrot.png")).convert_alpha()
+            self.piercing_carrot_image = pygame.transform.scale(img, (img.get_width()//2, img.get_height()//2))
+        except Exception:
+            self.piercing_carrot_image = pygame.Surface((16, 16), pygame.SRCALPHA)
+            pygame.draw.ellipse(self.piercing_carrot_image, (150, 150, 150), (0, 0, 16, 8))
         
         # Last attack time
         self.last_attack_time = 0
@@ -189,6 +201,36 @@ class Player(pygame.sprite.Sprite):
                             if not hasattr(enemy, f'carrot_last_hit_{i}') or now - getattr(enemy, f'carrot_last_hit_{i}', 0) > 300:
                                 enemy.take_damage(5)
                                 setattr(enemy, f'carrot_last_hit_{i}', now)
+        
+        # --- Piercing Carrot update ---
+        if self.piercing_carrot:
+            now = pygame.time.get_ticks()
+            if now - self.piercing_carrot_last_time > self.piercing_carrot_cooldown:
+                # Стреляем морковкой в направлении курсора
+                mouse_x, mouse_y = pygame.mouse.get_pos()
+                # Получаем scale и surf_rect из main.py через game
+                scale = self.game.get_scale() if self.game.fullscreen else 1.0
+                screen_rect = self.game.screen.get_rect()
+                surf_w, surf_h = int(WIDTH * scale), int(HEIGHT * scale)
+                surf_rect = pygame.Rect(0, 0, surf_w, surf_h)
+                surf_rect.center = screen_rect.center
+                # Переводим координаты мыши в координаты игрового поля
+                rel_x = (mouse_x - surf_rect.x) / scale
+                rel_y = (mouse_y - surf_rect.y) / scale
+                cam = self.game.camera
+                # Переводим в мировые координаты
+                world_mouse_x = rel_x - cam.offset.x
+                world_mouse_y = rel_y - cam.offset.y
+                px, py = self.rect.center
+                dx = world_mouse_x - px
+                dy = world_mouse_y - py
+                length = (dx ** 2 + dy ** 2) ** 0.5
+                if length > 0:
+                    direction = (dx / length, dy / length)
+                    # Создаем пронзающую морковку
+                    piercing_carrot = PiercingCarrot(self.game, self, direction)
+                    self.game.all_sprites.add(piercing_carrot)
+                self.piercing_carrot_last_time = now
         # Обновляем позицию rect
         self.rect.x = self.x
         self.rect.y = self.y

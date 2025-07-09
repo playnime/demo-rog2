@@ -36,6 +36,7 @@ class UpgradeManager:
     def create_upgrade_pool(self):
         """Creates the pool of all possible upgrades"""
         upgrades = [
+            Upgrade("Пронзающая морковь", "Серая морковь вылетает каждые 2с\nв направлении курсора", "piercing_carrot", 1, "rare", unique=True),
             Upgrade("Железное сердце", "Увеличивает максимальное здоровье на 25", "max_health", 25, "common", unique=False),
             Upgrade("Быстрые ноги", "Увеличивает скорость движения на 0.5", "speed", 0.5, "common", unique=False),
             Upgrade("Острый меч", "Увеличивает урон атаки на 5", "attack_damage", 5, "common", unique=False),
@@ -74,14 +75,20 @@ class UpgradeManager:
     def show_upgrade_screen(self):
         """Показывает экран выбора улучшений"""
         self.showing_upgrade_screen = True
+        # Второй уровень — обязательно Piercing Carrot
+        if self.level == 2 and not any(u.effect_type == 'piercing_carrot' for u in self.player_upgrades):
+            piercing_carrot = next(u for u in self.available_upgrades if u.effect_type == 'piercing_carrot')
+            others = [u for u in self.available_upgrades if u is not piercing_carrot]
+            self.upgrade_options = [piercing_carrot] + random.sample(others, 2)
+            random.shuffle(self.upgrade_options)
         # Первый апгрейд — обязательно Magic Carrots
-        if self.level == 2 and not any(u.effect_type == 'magic_carrots' for u in self.player_upgrades):
+        elif self.level == 3 and not any(u.effect_type == 'magic_carrots' for u in self.player_upgrades):
             magic_carrot = next(u for u in self.available_upgrades if u.effect_type == 'magic_carrots')
             others = [u for u in self.available_upgrades if u is not magic_carrot]
             self.upgrade_options = [magic_carrot] + random.sample(others, 2)
             random.shuffle(self.upgrade_options)
         # Второй апгрейд — обязательно Magic Carrots, если морковок < 5
-        elif self.level == 3 and hasattr(self, 'player') and getattr(self.player, 'magic_carrots_count', 0) < 5:
+        elif self.level == 4 and hasattr(self, 'player') and getattr(self.player, 'magic_carrots_count', 0) < 5:
             magic_carrot = next(u for u in self.available_upgrades if u.effect_type == 'magic_carrots')
             others = [u for u in self.available_upgrades if u is not magic_carrot]
             self.upgrade_options = [magic_carrot] + random.sample(others, 2)
@@ -143,6 +150,8 @@ class UpgradeManager:
             player.explosive_attack = True
         elif upgrade.effect_type == "knockback":
             player.knockback_attack = True
+        elif upgrade.effect_type == "piercing_carrot":
+            player.piercing_carrot = True
     
     def draw_upgrade_screen(self, screen):
         """Отрисовывает экран выбора улучшений"""

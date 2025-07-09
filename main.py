@@ -7,7 +7,7 @@ from player import Player
 from enemy import BasicEnemy, FastEnemy, StrongEnemy, BossEnemy, FoxEnemy, BlackFoxEnemy, RedFoxEnemy, BoarEnemy, ChickenEnemy, CowEnemy, LamaEnemy, PigEnemy, SheepEnemy
 from map import Map
 from camera import Camera
-from attack import Attack
+from attack import Attack, PiercingCarrot
 from utils import draw_health_bar
 from upgrade_system import UpgradeManager
 from experience_orb import ExperienceOrb, Carrot
