@@ -377,6 +377,32 @@ class LamaEnemy(Enemy):
         self.game.experience_orbs.add(orb)
         super().kill()
 
+class PigEnemy(Enemy):
+    def __init__(self, game, x, y):
+        # Характеристики как у FastEnemy (yeti)
+        level = getattr(game.upgrade_manager, 'level', 1)
+        hp = 30 + int(level * 2)
+        dmg = 3 + int(level * 0.3)
+        speed = 2.5
+        animation_frames = [
+            "assets/pig_anim1.png",
+            "assets/pig_anim2.png",
+            "assets/pig_anim3.png",
+            "assets/pig_anim4.png"
+        ]
+        super().__init__(game, x, y, None, speed, hp, dmg, 400, None, animation_frames, 220)
+        # Делаем свинью шире
+        self.image = pygame.transform.scale(self.image, (int(TILE_SIZE * 1.6), int(TILE_SIZE * 1.6)))
+        self.rect = self.image.get_rect()
+        self.rect.x = int(self.x)
+        self.rect.y = int(self.y)
+
+    def kill(self):
+        # Спавним сферу опыта на позиции врага
+        orb = ExperienceOrb(self.game, self.rect.centerx, self.rect.centery)
+        self.game.experience_orbs.add(orb)
+        super().kill()
+
 class DamageNumber(pygame.sprite.Sprite):
     def __init__(self, game, x, y, value):
         super().__init__(game.all_sprites)
