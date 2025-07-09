@@ -37,6 +37,7 @@ class UpgradeManager:
         """Creates the pool of all possible upgrades"""
         upgrades = [
             Upgrade("Пронзающая морковь", "Серая морковь вылетает каждые 2с\nв направлении курсора", "piercing_carrot", 1, "rare", unique=False),
+            Upgrade("Молния", "Молния убивает случайного врага\nкаждые 5 секунд", "lightning", 1, "epic", unique=True),
             Upgrade("Железное сердце", "Увеличивает максимальное здоровье на 25", "max_health", 25, "common", unique=False),
             Upgrade("Быстрые ноги", "Увеличивает скорость движения на 0.5", "speed", 0.5, "common", unique=False),
             Upgrade("Острый меч", "Увеличивает урон атаки на 5", "attack_damage", 5, "common", unique=False),
@@ -75,11 +76,11 @@ class UpgradeManager:
     def show_upgrade_screen(self):
         """Показывает экран выбора улучшений"""
         self.showing_upgrade_screen = True
-        # Второй уровень — обязательно Piercing Carrot
-        if self.level == 2 and not any(u.effect_type == 'piercing_carrot' for u in self.player_upgrades):
-            piercing_carrot = next(u for u in self.available_upgrades if u.effect_type == 'piercing_carrot')
-            others = [u for u in self.available_upgrades if u is not piercing_carrot]
-            self.upgrade_options = [piercing_carrot] + random.sample(others, 2)
+        # Второй уровень — обязательно Lightning
+        if self.level == 2 and not any(u.effect_type == 'lightning' for u in self.player_upgrades):
+            lightning = next(u for u in self.available_upgrades if u.effect_type == 'lightning')
+            others = [u for u in self.available_upgrades if u is not lightning]
+            self.upgrade_options = [lightning] + random.sample(others, 2)
             random.shuffle(self.upgrade_options)
         # Первый апгрейд — обязательно Magic Carrots
         elif self.level == 3 and not any(u.effect_type == 'magic_carrots' for u in self.player_upgrades):
@@ -157,6 +158,8 @@ class UpgradeManager:
             player.knockback_attack = True
         elif upgrade.effect_type == "piercing_carrot":
             player.piercing_carrot = True
+        elif upgrade.effect_type == "lightning":
+            player.lightning = True
     
     def draw_upgrade_screen(self, screen):
         """Отрисовывает экран выбора улучшений"""

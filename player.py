@@ -65,6 +65,7 @@ class Player(pygame.sprite.Sprite):
         self.explosive_attack = False
         self.knockback_attack = False
         self.piercing_carrot = False  # Новое улучшение
+        self.lightning = False  # Бонус молнии
         
         # --- Magic Carrots ---
         self.magic_carrots_active = False
@@ -88,6 +89,10 @@ class Player(pygame.sprite.Sprite):
         self.piercing_carrot_cooldown = 2000  # 2 секунды
         self.piercing_carrot_count = 0  # Счетчик пронзающих морковок
         self.piercing_carrot_image = None
+        
+        # --- Lightning ---
+        self.lightning_last_time = 0
+        self.lightning_cooldown = 5000  # 5 секунд
         try:
             img = pygame.image.load(os.path.join("assets", "carrot.png")).convert_alpha()
             self.piercing_carrot_image = pygame.transform.scale(img, (img.get_width()//2, img.get_height()//2))
@@ -242,6 +247,28 @@ class Player(pygame.sprite.Sprite):
                         piercing_carrot = PiercingCarrot(self.game, self, rotated_direction)
                         self.game.all_sprites.add(piercing_carrot)
                 self.piercing_carrot_last_time = now
+        
+        # --- Lightning update ---
+        if self.lightning:
+            now = pygame.time.get_ticks()
+            if now - self.lightning_last_time > self.lightning_cooldown:
+                # Ищем случайного врага в кадре
+                visible_enemies = []
+                for enemy in self.game.enemies:
+                    # Проверяем, что враг видим на экране
+                    enemy_screen_pos = self.game.camera.apply(enemy)
+                    if (0 <= enemy_screen_pos.x <= WIDTH and 
+                        0 <= enemy_screen_pos.y <= HEIGHT):
+                        visible_enemies.append(enemy)
+                
+                if visible_enemies:
+                    # Выбираем случайного врага
+                    target_enemy = random.choice(visible_enemies)
+                    # Создаем молнию
+                    from attack import LightningAttack
+                    lightning = LightningAttack(self.game, self, target_enemy)
+                    self.game.all_sprites.add(lightning)
+                self.lightning_last_time = now
         # Обновляем позицию rect
         self.rect.x = self.x
         self.rect.y = self.y
@@ -344,3 +371,5 @@ class Player(pygame.sprite.Sprite):
         elif upgrade.effect_type == "piercing_carrot":
             self.piercing_carrot = True
             self.piercing_carrot_count = min(self.piercing_carrot_count + 1, 3)  # Максимум 3 морковки
+        elif upgrade.effect_type == "lightning":
+            self.lightning = True

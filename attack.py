@@ -314,3 +314,95 @@ class PiercingCarrot(pygame.sprite.Sprite):
             self.y < 0 or self.y > map_height):
             self.kill()
             return
+
+class LightningAttack(pygame.sprite.Sprite):
+    def __init__(self, game, player, target_enemy):
+        super().__init__()
+        self.game = game
+        self.player = player
+        self.target_enemy = target_enemy
+        self.damage = 999  # Убивает любого врага
+        self.duration = 300  # 0.3 секунды жизни (еще быстрее исчезает)
+        self.spawn_time = pygame.time.get_ticks()
+        
+        # Загружаем кадры анимации молнии
+        self.lightning_frames = []
+        try:
+            for i in range(1, 4):  # 3 кадра анимации
+                img = pygame.image.load(os.path.join("assets", "light_anim", f"light_anim{i}.png")).convert_alpha()
+                # Увеличиваем изображение: по X в 2 раза, по Y в 5 раз
+                original_width = img.get_width()
+                original_height = img.get_height()
+                new_width = original_width * 2
+                new_height = original_height * 5
+                scaled_img = pygame.transform.scale(img, (new_width, new_height))
+                self.lightning_frames.append(scaled_img)
+        except Exception:
+            # Запасной вариант - создаем простую молнию
+            for i in range(3):
+                surface = pygame.Surface((64, 320), pygame.SRCALPHA)  # 32*2 x 64*5
+                pygame.draw.line(surface, (255, 255, 0), (32, 0), (32, 320), 8)  # Желтая линия
+                self.lightning_frames.append(surface)
+        
+        self.current_frame = 0
+        self.animation_timer = 0
+        self.animation_speed = 0.05  # Скорость анимации (в 2 раза быстрее)
+        
+        # Позиционируем молнию сверху над целью (из неба)
+        tx, ty = target_enemy.rect.center
+        self.x = tx
+        self.y = ty - 340  # Позиционируем еще выше цели
+        
+        # Начальный кадр (без поворота - молния идет сверху вниз)
+        self.image = self.lightning_frames[0]
+        self.rect = self.image.get_rect(center=(self.x, self.y))
+        
+        # Урон будет нанесен последним кадром анимации
+        self.damage_dealt = False  # Флаг для отслеживания нанесения урона
+
+    def update(self):
+        now = pygame.time.get_ticks()
+        if now - self.spawn_time > self.duration:
+            self.kill()
+            return
+        
+        # Анимация молнии (проигрывается один раз)
+        dt = 1 / 60  # Предполагаем 60 FPS
+        self.animation_timer += dt
+        if self.animation_timer >= self.animation_speed:
+            self.animation_timer = 0
+            self.current_frame += 1
+            # Останавливаем анимацию на последнем кадре
+            if self.current_frame >= len(self.lightning_frames):
+                self.current_frame = len(self.lightning_frames) - 1
+        
+        # Обновляем кадр анимации (без поворота)
+        self.image = self.lightning_frames[self.current_frame]
+        
+        # Обновляем позицию (молния остается сверху над целью)
+        tx, ty = self.target_enemy.rect.center
+        self.x = tx
+        self.y = ty - 340
+        self.rect.center = (self.x, self.y)
+        
+        # Наносим урон только на последнем кадре анимации, когда нижняя часть молнии касается врага
+        if self.current_frame == len(self.lightning_frames) - 1 and not self.damage_dealt:
+            # Создаем rect для нижней части молнии (только нижние 20% высоты)
+            lightning_height = self.rect.height
+            bottom_lightning_height = lightning_height * 0.2  # 20% от высоты молнии
+            bottom_lightning_rect = pygame.Rect(
+                self.rect.x,
+                self.rect.bottom - bottom_lightning_height,
+                self.rect.width,
+                bottom_lightning_height
+            )
+            
+            # Проверяем, касается ли нижняя часть молнии врага
+            if bottom_lightning_rect.colliderect(self.target_enemy.rect):
+                self.target_enemy.take_damage(self.damage)
+                self.damage_dealt = True
+                if self.target_enemy.health <= 0:
+                    self.player.on_kill_enemy()
+                    result = self.game.upgrade_manager.on_enemy_killed()
+                    if result == "spawn_boss":
+                        self.game.spawn_boss()
