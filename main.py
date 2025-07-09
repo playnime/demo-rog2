@@ -32,7 +32,7 @@ clock = pygame.time.Clock()
 
 class Game:
     def __init__(self):
-        self.state = 'menu'  # 'menu', 'playing', 'paused'
+        self.state = 'menu'  # 'menu', 'playing', 'paused', 'game_over'
         self.upgrade_manager = UpgradeManager()
         self.fullscreen = fullscreen
         self.screen = screen
@@ -43,6 +43,7 @@ class Game:
         self.notification_text = ""
         self.notification_time = 0
         self.notification_duration = 3000  # 3 seconds
+        self.last_level = 1  # Для экрана Game Over
 
     def reset_game(self):
         self.all_sprites = pygame.sprite.Group()
@@ -149,6 +150,25 @@ class Game:
         fps_text = font_fps.render(f"FPS: {fps}", True, (255,255,0))
         surface.blit(fps_text, (surface.get_width() - fps_text.get_width() - 10, 10))
 
+    def draw_game_over_screen(self, surface):
+        """Рисует экран Game Over с уровнем игрока"""
+        s = pygame.Surface(GAME_SIZE)
+        s.set_alpha(200)
+        s.fill((0, 0, 0))
+        surface.blit(s, (0, 0))
+        font = pygame.font.SysFont(None, 80)
+        text = font.render('ВЫ ПРОИГРАЛИ', True, (255, 50, 50))
+        surface.blit(text, (WIDTH // 2 - text.get_width() // 2, HEIGHT // 2 - 100))
+        font2 = pygame.font.SysFont(None, 48)
+        level_text = font2.render(f'Достигнутый уровень: {self.last_level}', True, (255, 255, 255))
+        surface.blit(level_text, (WIDTH // 2 - level_text.get_width() // 2, HEIGHT // 2))
+        font3 = pygame.font.SysFont(None, 36)
+        info_text = font3.render('Нажмите ENTER для возврата в меню', True, (200, 200, 200))
+        surface.blit(info_text, (WIDTH // 2 - info_text.get_width() // 2, HEIGHT // 2 + 80))
+        # Комментарии на русском
+        # Этот экран появляется после смерти игрока
+        # Показывает достигнутый уровень и инструкцию для возврата в меню
+
     def run(self):
         running = True
         while running:
@@ -197,6 +217,9 @@ class Game:
                 elif self.state == 'paused':
                     # В паузе можно только выйти из паузы (по P)
                     pass
+                elif self.state == 'game_over':
+                    if event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
+                        self.state = 'menu'
 
             # --- ALWAYS update and draw the scene ---
             if self.state == 'playing' and not self.upgrade_manager.showing_upgrade_screen:
@@ -271,6 +294,9 @@ class Game:
                 for i, ctrl in enumerate(pause_ctrls):
                     ctrl_text = font_ctrl.render(ctrl, True, (200, 200, 200))
                     game_surface.blit(ctrl_text, (WIDTH // 2 - ctrl_text.get_width() // 2, HEIGHT // 2 + 60 + i * 32))
+            # Game Over overlay
+            if self.state == 'game_over':
+                self.draw_game_over_screen(game_surface)
             # Scale and center the final surface
             scale = self.get_scale() if fullscreen else 1.0
             scaled_surface = pygame.transform.scale(game_surface, (int(WIDTH * scale), int(HEIGHT * scale)))
@@ -282,7 +308,8 @@ class Game:
 
             # Check player death
             if self.state == 'playing' and self.player.health <= 0:
-                self.state = 'menu'
+                self.last_level = self.upgrade_manager.level
+                self.state = 'game_over'
 
             # --- Новый блок: обработка сбора сфер ---
             if self.state == 'playing' and not self.upgrade_manager.showing_upgrade_screen:
