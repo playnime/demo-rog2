@@ -11,7 +11,7 @@ from attack import Attack, PiercingCarrot, LightningAttack
 from utils import draw_health_bar
 from upgrade_system import UpgradeManager
 from experience_orb import ExperienceOrb, Carrot
-from sound_settings import apply_volume_to_sounds, get_effects_volume
+from sound_settings import apply_volume_to_sounds, get_effects_volume, get_volume_multiplier
 
 pygame.init()
 pygame.mixer.init()  # Инициализация звуковой системы
@@ -43,6 +43,14 @@ except pygame.error as e:
     menu_leave_btn = pygame.Surface((200, 60))
     menu_leave_btn.fill((255, 0, 0))
 
+# Загрузка звука наведения на кнопки меню
+try:
+    menu_hover_sound = pygame.mixer.Sound("assets/sounds/menu_hover_sound.wav")
+    menu_hover_sound.set_volume(0.3)
+except pygame.error as e:
+    print(f"Ошибка загрузки звука наведения меню: {e}")
+    menu_hover_sound = None
+
 # Масштабирование изображений под размер экрана
 def scale_menu_images():
     global menu_background, menu_title, menu_start_btn, menu_settings_btn, menu_leave_btn
@@ -69,6 +77,10 @@ class MenuManager:
         # Инициализируем ручку слайдера в правильной позиции
         self.update_slider_handle_position()
         self.dragging_slider = False
+        
+        # Отслеживание наведения мыши на кнопки
+        self.last_hovered_button = None
+        self.hovered_button = None  # Текущая кнопка под курсором
     
     def update_slider_handle_position(self):
         """Обновляет позицию ручки слайдера в соответствии с текущей громкостью"""
@@ -98,18 +110,27 @@ class MenuManager:
             btn_spacing = 140  # Обновлено под новое расстояние
             
             # Кнопка Start
-            start_rect = menu_start_btn.get_rect(center=(WIDTH // 2, btn_y))
+            start_scale = 0.9 if self.hovered_button == 'start' else 1.0
+            start_width = int(menu_start_btn.get_width() * start_scale)
+            start_height = int(menu_start_btn.get_height() * start_scale)
+            start_rect = pygame.Rect(WIDTH // 2 - start_width // 2, btn_y - start_height // 2, start_width, start_height)
             if start_rect.collidepoint(adjusted_pos):
                 return 'start_game'
             
             # Кнопка Settings
-            settings_rect = menu_settings_btn.get_rect(center=(WIDTH // 2, btn_y + btn_spacing))
+            settings_scale = 0.9 if self.hovered_button == 'settings' else 1.0
+            settings_width = int(menu_settings_btn.get_width() * settings_scale)
+            settings_height = int(menu_settings_btn.get_height() * settings_scale)
+            settings_rect = pygame.Rect(WIDTH // 2 - settings_width // 2, btn_y + btn_spacing - settings_height // 2, settings_width, settings_height)
             if settings_rect.collidepoint(adjusted_pos):
                 self.state = 'settings'
                 return None
             
             # Кнопка Leave (оставляем на прежнем месте)
-            leave_rect = menu_leave_btn.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 320))
+            leave_scale = 0.9 if self.hovered_button == 'leave' else 1.0
+            leave_width = int(menu_leave_btn.get_width() * leave_scale)
+            leave_height = int(menu_leave_btn.get_height() * leave_scale)
+            leave_rect = pygame.Rect(WIDTH // 2 - leave_width // 2, HEIGHT // 2 + 320 - leave_height // 2, leave_width, leave_height)
             if leave_rect.collidepoint(adjusted_pos):
                 return 'quit_game'
                 
@@ -148,7 +169,57 @@ class MenuManager:
         
         return (adjusted_x, adjusted_y)
     
+    def check_button_hover(self, pos):
+        """Проверяет наведение мыши на кнопки и воспроизводит звук"""
+        if self.state != 'main':
+            return
+            
+        adjusted_pos = self.adjust_mouse_pos(pos)
+        current_hovered = None
+        
+        # Проверяем наведение на кнопки (используем актуальные размеры)
+        btn_y = HEIGHT // 2 + 40
+        btn_spacing = 140
+        
+        # Кнопка Start
+        start_scale = 0.9 if self.hovered_button == 'start' else 1.0
+        start_width = int(menu_start_btn.get_width() * start_scale)
+        start_height = int(menu_start_btn.get_height() * start_scale)
+        start_rect = pygame.Rect(WIDTH // 2 - start_width // 2, btn_y - start_height // 2, start_width, start_height)
+        if start_rect.collidepoint(adjusted_pos):
+            current_hovered = 'start'
+        
+        # Кнопка Settings
+        settings_scale = 0.9 if self.hovered_button == 'settings' else 1.0
+        settings_width = int(menu_settings_btn.get_width() * settings_scale)
+        settings_height = int(menu_settings_btn.get_height() * settings_scale)
+        settings_rect = pygame.Rect(WIDTH // 2 - settings_width // 2, btn_y + btn_spacing - settings_height // 2, settings_width, settings_height)
+        if settings_rect.collidepoint(adjusted_pos):
+            current_hovered = 'settings'
+        
+        # Кнопка Leave
+        leave_scale = 0.9 if self.hovered_button == 'leave' else 1.0
+        leave_width = int(menu_leave_btn.get_width() * leave_scale)
+        leave_height = int(menu_leave_btn.get_height() * leave_scale)
+        leave_rect = pygame.Rect(WIDTH // 2 - leave_width // 2, HEIGHT // 2 + 320 - leave_height // 2, leave_width, leave_height)
+        if leave_rect.collidepoint(adjusted_pos):
+            current_hovered = 'leave'
+        
+        # Воспроизводим звук при наведении на новую кнопку
+        if current_hovered != self.last_hovered_button and current_hovered is not None:
+            if menu_hover_sound:
+                # Применяем коэффициент громкости
+                volume_multiplier = get_volume_multiplier()
+                menu_hover_sound.set_volume(0.3 * volume_multiplier)
+                menu_hover_sound.play()
+        
+        self.last_hovered_button = current_hovered
+        self.hovered_button = current_hovered
+    
     def handle_mouse_motion(self, pos):
+        # Проверяем наведение на кнопки
+        self.check_button_hover(pos)
+        
         if self.state == 'settings' and self.dragging_slider:
             # Обновляем громкость на основе позиции мыши
             adjusted_pos = self.adjust_mouse_pos(pos)
@@ -176,16 +247,28 @@ class MenuManager:
         btn_spacing = 140  # Увеличили расстояние между кнопками
         
         # Кнопка Start
-        start_rect = menu_start_btn.get_rect(center=(WIDTH // 2, btn_y))
-        surface.blit(menu_start_btn, start_rect)
+        start_scale = 0.9 if self.hovered_button == 'start' else 1.0
+        start_scaled = pygame.transform.scale(menu_start_btn, 
+            (int(menu_start_btn.get_width() * start_scale), 
+             int(menu_start_btn.get_height() * start_scale)))
+        start_rect = start_scaled.get_rect(center=(WIDTH // 2, btn_y))
+        surface.blit(start_scaled, start_rect)
         
         # Кнопка Settings
-        settings_rect = menu_settings_btn.get_rect(center=(WIDTH // 2, btn_y + btn_spacing))
-        surface.blit(menu_settings_btn, settings_rect)
+        settings_scale = 0.9 if self.hovered_button == 'settings' else 1.0
+        settings_scaled = pygame.transform.scale(menu_settings_btn, 
+            (int(menu_settings_btn.get_width() * settings_scale), 
+             int(menu_settings_btn.get_height() * settings_scale)))
+        settings_rect = settings_scaled.get_rect(center=(WIDTH // 2, btn_y + btn_spacing))
+        surface.blit(settings_scaled, settings_rect)
         
         # Кнопка Leave (оставляем на прежнем месте)
-        leave_rect = menu_leave_btn.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 320))
-        surface.blit(menu_leave_btn, leave_rect)
+        leave_scale = 0.9 if self.hovered_button == 'leave' else 1.0
+        leave_scaled = pygame.transform.scale(menu_leave_btn, 
+            (int(menu_leave_btn.get_width() * leave_scale), 
+             int(menu_leave_btn.get_height() * leave_scale)))
+        leave_rect = leave_scaled.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 320))
+        surface.blit(leave_scaled, leave_rect)
     
     def draw_settings_menu(self, surface):
         # Полупрозрачный фон
