@@ -36,7 +36,7 @@ class UpgradeManager:
     def create_upgrade_pool(self):
         """Creates the pool of all possible upgrades"""
         upgrades = [
-            Upgrade("Пронзающая морковь", "Серая морковь вылетает каждые 2с\nв направлении курсора", "piercing_carrot", 1, "rare", unique=True),
+            Upgrade("Пронзающая морковь", "Серая морковь вылетает каждые 2с\nв направлении курсора", "piercing_carrot", 1, "rare", unique=False),
             Upgrade("Железное сердце", "Увеличивает максимальное здоровье на 25", "max_health", 25, "common", unique=False),
             Upgrade("Быстрые ноги", "Увеличивает скорость движения на 0.5", "speed", 0.5, "common", unique=False),
             Upgrade("Острый меч", "Увеличивает урон атаки на 5", "attack_damage", 5, "common", unique=False),
@@ -102,6 +102,11 @@ class UpgradeManager:
         for upgrade in self.available_upgrades:
             if upgrade.effect_type == 'magic_carrots':
                 available.append(upgrade)
+            elif upgrade.effect_type == 'piercing_carrot':
+                # Ограничиваем Piercing Carrot до 3 раз
+                piercing_count = sum(1 for u in self.player_upgrades if u.effect_type == 'piercing_carrot')
+                if piercing_count < 3:
+                    available.append(upgrade)
             elif upgrade.unique:
                 if upgrade not in self.player_upgrades:
                     available.append(upgrade)

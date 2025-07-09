@@ -86,6 +86,7 @@ class Player(pygame.sprite.Sprite):
         # --- Piercing Carrot ---
         self.piercing_carrot_last_time = 0
         self.piercing_carrot_cooldown = 2000  # 2 секунды
+        self.piercing_carrot_count = 0  # Счетчик пронзающих морковок
         self.piercing_carrot_image = None
         try:
             img = pygame.image.load(os.path.join("assets", "carrot.png")).convert_alpha()
@@ -206,7 +207,7 @@ class Player(pygame.sprite.Sprite):
         if self.piercing_carrot:
             now = pygame.time.get_ticks()
             if now - self.piercing_carrot_last_time > self.piercing_carrot_cooldown:
-                # Стреляем морковкой в направлении курсора
+                # Стреляем морковками в направлении курсора
                 mouse_x, mouse_y = pygame.mouse.get_pos()
                 # Получаем scale и surf_rect из main.py через game
                 scale = self.game.get_scale() if self.game.fullscreen else 1.0
@@ -227,9 +228,19 @@ class Player(pygame.sprite.Sprite):
                 length = (dx ** 2 + dy ** 2) ** 0.5
                 if length > 0:
                     direction = (dx / length, dy / length)
-                    # Создаем пронзающую морковку
-                    piercing_carrot = PiercingCarrot(self.game, self, direction)
-                    self.game.all_sprites.add(piercing_carrot)
+                    # Создаем несколько пронзающих морковок в зависимости от количества бонусов
+                    for i in range(self.piercing_carrot_count):
+                        # Добавляем небольшое отклонение для каждой морковки
+                        angle_offset = (i - (self.piercing_carrot_count - 1) / 2) * 0.2  # 0.2 радиан = ~11 градусов
+                        cos_offset = math.cos(angle_offset)
+                        sin_offset = math.sin(angle_offset)
+                        # Поворачиваем направление
+                        rotated_dx = direction[0] * cos_offset - direction[1] * sin_offset
+                        rotated_dy = direction[0] * sin_offset + direction[1] * cos_offset
+                        rotated_direction = (rotated_dx, rotated_dy)
+                        # Создаем пронзающую морковку
+                        piercing_carrot = PiercingCarrot(self.game, self, rotated_direction)
+                        self.game.all_sprites.add(piercing_carrot)
                 self.piercing_carrot_last_time = now
         # Обновляем позицию rect
         self.rect.x = self.x
@@ -330,3 +341,6 @@ class Player(pygame.sprite.Sprite):
         if upgrade.effect_type == "magic_carrots":
             self.has_magic_carrots = True
             self.magic_carrots_count = min(self.magic_carrots_count + 1, 5)
+        elif upgrade.effect_type == "piercing_carrot":
+            self.piercing_carrot = True
+            self.piercing_carrot_count = min(self.piercing_carrot_count + 1, 3)  # Максимум 3 морковки
