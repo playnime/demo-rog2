@@ -17,6 +17,14 @@ class Player(pygame.sprite.Sprite):
             self.sword_sound = None
             print("Не удалось загрузить звук меча")
         
+        # --- Загрузка звука ходьбы ---
+        try:
+            self.walk_sound = pygame.mixer.Sound(os.path.join("assets", "sounds", "walk_sound.mp3"))
+            self.walk_sound.set_volume(0.04)  # Устанавливаем громкость на 4%
+        except:
+            self.walk_sound = None
+            print("Не удалось загрузить звук ходьбы")
+        
         # --- Анимация кролика ---
         # Загружаем кадры анимации ходьбы вправо
         self.walk_right_frames = [
@@ -110,6 +118,11 @@ class Player(pygame.sprite.Sprite):
         
         # Last attack time
         self.last_attack_time = 0
+        
+        # --- Переменные для звука ходьбы ---
+        self.walk_sound_playing = False
+        self.walk_sound_cooldown = 300  # миллисекунды между воспроизведениями звука ходьбы
+        self.last_walk_sound_time = 0
 
     def move(self, dx=0, dy=0):
         # Новые координаты после перемещения
@@ -157,6 +170,15 @@ class Player(pygame.sprite.Sprite):
         # Движение
         if self.is_moving:
             self.move(dx, dy)
+            # --- Воспроизведение звука ходьбы ---
+            if self.walk_sound:
+                now = pygame.time.get_ticks()
+                if now - self.last_walk_sound_time > self.walk_sound_cooldown:
+                    self.walk_sound.play()
+                    self.last_walk_sound_time = now
+        else:
+            # Останавливаем звук ходьбы, если игрок не двигается
+            self.walk_sound_playing = False
         # --- Анимация ---
         dt = 1 / 60  # Предполагаем 60 FPS, если dt не передаётся
         

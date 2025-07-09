@@ -1,6 +1,7 @@
 import pygame
 import random
 from settings import *
+import os
 
 class Upgrade:
     def __init__(self, name, description, effect_type, effect_value, rarity="common", unique=False):
@@ -24,6 +25,14 @@ class Upgrade:
 
 class UpgradeManager:
     def __init__(self):
+        # --- Загрузка звука повышения уровня ---
+        try:
+            self.lvlup_sound = pygame.mixer.Sound(os.path.join("assets", "sounds", "lvlup_sound.mp3"))
+            self.lvlup_sound.set_volume(0.1)  # Устанавливаем громкость на 10%
+        except:
+            self.lvlup_sound = None
+            print("Не удалось загрузить звук повышения уровня")
+        
         self.available_upgrades = self.create_upgrade_pool()
         self.player_upgrades = []
         self.kills_until_upgrade = 5
@@ -55,6 +64,9 @@ class UpgradeManager:
         self.current_kills += 1
         if self.current_kills >= self.kills_until_upgrade:
             self.level += 1
+            # Воспроизводим звук повышения уровня
+            if self.lvlup_sound:
+                self.lvlup_sound.play()
             self.show_upgrade_screen()
             self.current_kills = 0
             # Сбалансированный рост требуемого опыта
