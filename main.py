@@ -151,23 +151,22 @@ class Game:
         surface.blit(fps_text, (surface.get_width() - fps_text.get_width() - 10, 10))
 
     def draw_game_over_screen(self, surface):
-        """Рисует экран Game Over с уровнем игрока"""
+        """Draws the Game Over screen with the player's level (English text)"""
         s = pygame.Surface(GAME_SIZE)
         s.set_alpha(200)
         s.fill((0, 0, 0))
         surface.blit(s, (0, 0))
         font = pygame.font.SysFont(None, 80)
-        text = font.render('ВЫ ПРОИГРАЛИ', True, (255, 50, 50))
+        text = font.render('GAME OVER', True, (255, 50, 50))
         surface.blit(text, (WIDTH // 2 - text.get_width() // 2, HEIGHT // 2 - 100))
         font2 = pygame.font.SysFont(None, 48)
-        level_text = font2.render(f'Достигнутый уровень: {self.last_level}', True, (255, 255, 255))
+        level_text = font2.render(f'Level reached: {self.last_level}', True, (255, 255, 255))
         surface.blit(level_text, (WIDTH // 2 - level_text.get_width() // 2, HEIGHT // 2))
         font3 = pygame.font.SysFont(None, 36)
-        info_text = font3.render('Нажмите ENTER для возврата в меню', True, (200, 200, 200))
+        info_text = font3.render('Press ENTER to return to menu', True, (200, 200, 200))
         surface.blit(info_text, (WIDTH // 2 - info_text.get_width() // 2, HEIGHT // 2 + 80))
-        # Комментарии на русском
-        # Этот экран появляется после смерти игрока
-        # Показывает достигнутый уровень и инструкцию для возврата в меню
+        # This screen appears after the player dies
+        # Shows the reached level and instruction to return to menu
 
     def run(self):
         running = True
