@@ -3,6 +3,7 @@ from settings import *
 import random
 import math
 from experience_orb import ExperienceOrb, Carrot
+import os
 
 def create_enemy_image(color, size=TILE_SIZE):
     """Creates an enemy image of the given color"""
@@ -24,6 +25,15 @@ class Enemy(pygame.sprite.Sprite):
     def __init__(self, game, x, y, image_path, speed, health, damage, attack_cooldown, tint_color=None, animation_frames=None, animation_speed=200):
         super().__init__(game.all_sprites)
         self.game = game
+        
+        # --- Загрузка звука получения урона ---
+        try:
+            self.hit_sound = pygame.mixer.Sound(os.path.join("assets", "sounds", "hit_sound.wav"))
+            self.hit_sound.set_volume(0.1)  # Устанавливаем громкость на 10%
+        except:
+            self.hit_sound = None
+            print("Не удалось загрузить звук получения урона")
+        
         self.animation_frames = animation_frames
         self.animation_speed = animation_speed
         self.current_frame = 0
@@ -170,6 +180,8 @@ class Enemy(pygame.sprite.Sprite):
         DamageNumber.spawn(self.game, self.rect.centerx, self.rect.top, amount)
         if self.health <= 0:
             self.kill()
+        if self.hit_sound:
+            self.hit_sound.play()
 
     def _update_base_image(self):
         """Обновляет базовое изображение для эффекта вспышки"""

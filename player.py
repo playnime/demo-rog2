@@ -9,6 +9,14 @@ class Player(pygame.sprite.Sprite):
     def __init__(self, game, x, y):
         super().__init__()
         self.game = game
+        # --- Загрузка звука меча ---
+        try:
+            self.sword_sound = pygame.mixer.Sound(os.path.join("assets", "sounds", "sword_sound.mp3"))
+            self.sword_sound.set_volume(0.3)  # Устанавливаем громкость на 30%
+        except:
+            self.sword_sound = None
+            print("Не удалось загрузить звук меча")
+        
         # --- Анимация кролика ---
         # Загружаем кадры анимации ходьбы вправо
         self.walk_right_frames = [
@@ -340,6 +348,8 @@ class Player(pygame.sprite.Sprite):
         attack.size_multiplier = self.attack_size_multiplier
         if self.explosive_attack:
             attack.explosive = True
+        if self.sword_sound:
+            self.sword_sound.play()
         return attack
 
     def draw(self, surface, camera):

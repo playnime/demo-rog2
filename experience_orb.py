@@ -27,6 +27,15 @@ class Carrot(pygame.sprite.Sprite):
     def __init__(self, game, x, y):
         super().__init__()
         self.game = game
+        
+        # --- Загрузка звука получения опыта ---
+        try:
+            self.exp_sound = pygame.mixer.Sound(os.path.join("assets", "sounds", "exp_sound.wav"))
+            self.exp_sound.set_volume(0.3)  # Устанавливаем громкость на 30%
+        except:
+            self.exp_sound = None
+            print("Не удалось загрузить звук получения опыта")
+        
         self.image = pygame.image.load(os.path.join("assets", "carrot.png")).convert_alpha()
         self.rect = self.image.get_rect()
         self.rect.center = (x, y)
@@ -42,5 +51,7 @@ class Carrot(pygame.sprite.Sprite):
         
         # Check collision with player
         if self.rect.colliderect(self.game.player.rect):
+            if self.exp_sound:
+                self.exp_sound.play()
             self.game.upgrade_manager.on_experience_orb_collected()
             self.kill() 

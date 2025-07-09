@@ -13,6 +13,7 @@ from upgrade_system import UpgradeManager
 from experience_orb import ExperienceOrb, Carrot
 
 pygame.init()
+pygame.mixer.init()  # Инициализация звуковой системы
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 fullscreen = False
 # Surface for the game field
