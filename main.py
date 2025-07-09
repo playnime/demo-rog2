@@ -4,7 +4,7 @@ import random
 import math
 from settings import *
 from player import Player
-from enemy import BasicEnemy, FastEnemy, StrongEnemy, BossEnemy, FoxEnemy, BlackFoxEnemy, RedFoxEnemy, BoarEnemy, ChickenEnemy, CowEnemy, LamaEnemy, PigEnemy
+from enemy import BasicEnemy, FastEnemy, StrongEnemy, BossEnemy, FoxEnemy, BlackFoxEnemy, RedFoxEnemy, BoarEnemy, ChickenEnemy, CowEnemy, LamaEnemy, PigEnemy, SheepEnemy
 from map import Map
 from camera import Camera
 from attack import Attack
@@ -101,7 +101,8 @@ class Game:
                       lambda g, x, y: LamaEnemy(g, x, y, 0),  # обычная лама
                       lambda g, x, y: LamaEnemy(g, x, y, 1),  # тёмная лама
                       lambda g, x, y: LamaEnemy(g, x, y, 2),  # красная лама
-                      PigEnemy]  # свинья
+                      PigEnemy,  # свинья
+                      SheepEnemy]  # овца
         # После 3 уровня добавляем кабанов
         if level >= 4:
             # Добавляем BoarEnemy с тремя цветами

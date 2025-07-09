@@ -403,6 +403,27 @@ class PigEnemy(Enemy):
         self.game.experience_orbs.add(orb)
         super().kill()
 
+class SheepEnemy(Enemy):
+    def __init__(self, game, x, y):
+        # Овца: быстрая, наносит много урона, но умирает с одного удара
+        level = getattr(game.upgrade_manager, 'level', 1)
+        hp = 1  # Умирает с одного удара
+        dmg = 15 + int(level * 1.5)  # Высокий урон
+        # Анимация овцы
+        animation_frames = [
+            "assets/sheep-anim1.png",
+            "assets/sheep-anim2.png", 
+            "assets/sheep-anim3.png",
+            "assets/sheep-anim4.png"
+        ]
+        super().__init__(game, x, y, None, 3.5, hp, dmg, 300, (255, 255, 255), animation_frames, 150)
+
+    def kill(self):
+        # Спавним сферу опыта на позиции врага
+        orb = ExperienceOrb(self.game, self.rect.centerx, self.rect.centery)
+        self.game.experience_orbs.add(orb)
+        super().kill()
+
 class DamageNumber(pygame.sprite.Sprite):
     def __init__(self, game, x, y, value):
         super().__init__(game.all_sprites)
