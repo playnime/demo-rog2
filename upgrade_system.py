@@ -36,32 +36,15 @@ class UpgradeManager:
     def create_upgrade_pool(self):
         """Creates the pool of all possible upgrades"""
         upgrades = [
-            # Health upgrades
             Upgrade("Iron Heart", "Increases max health by 25", "max_health", 25, "common", unique=False),
-            Upgrade("Titanium Heart", "Increases max health by 50", "max_health", 50, "uncommon", unique=False),
-            Upgrade("Divine Heart", "Increases max health by 100", "max_health", 100, "rare", unique=False),
-            # Speed upgrades
             Upgrade("Fast Legs", "Increases movement speed by 0.5", "speed", 0.5, "common", unique=False),
-            Upgrade("Wind Speed", "Increases movement speed by 1.0", "speed", 1.0, "uncommon", unique=False),
-            Upgrade("Lightning", "Increases movement speed by 2.0", "speed", 2.0, "rare", unique=False),
-            # Attack upgrades
             Upgrade("Sharp Sword", "Increases attack damage by 5", "attack_damage", 5, "common", unique=False),
-            Upgrade("Bloody Blade", "Increases attack damage by 10", "attack_damage", 10, "uncommon", unique=False),
-            Upgrade("Excalibur", "Increases attack damage by 20", "attack_damage", 20, "rare", unique=False),
-            # Attack speed upgrades
             Upgrade("Quick Hand", "Reduces attack delay by 100ms", "attack_speed", 100, "common", unique=False),
-            Upgrade("Sword Master", "Reduces attack delay by 200ms", "attack_speed", 200, "uncommon", unique=False),
-            Upgrade("Berserk", "Reduces attack delay by 300ms", "attack_speed", 300, "rare", unique=False),
-            # Attack size upgrades
             Upgrade("Long Sword", "Increases attack size by 10%", "attack_size", 0.1, "common", unique=False),
-            Upgrade("Giant Blade", "Increases attack size by 20%", "attack_size", 0.2, "uncommon", unique=False),
-            Upgrade("Cosmic Sword", "Increases attack size by 50%", "attack_size", 0.5, "rare", unique=False),
-            # Special upgrades
+            Upgrade("Forceful Swing", "Your attacks knock enemies back", "knockback", 1, "uncommon", unique=True),
             Upgrade("Vampirism", "Restores 5 health per kill", "vampirism", 5, "epic", unique=True),
             Upgrade("Critical Strike", "20% chance to deal double damage", "critical_chance", 0.2, "epic", unique=True),
-            Upgrade("Immortality", "10% chance to avoid damage when hit", "dodge_chance", 0.1, "legendary", unique=True),
-            Upgrade("Explosive Attack", "Attacks explode, damaging nearby enemies", "explosive_attack", 1, "legendary", unique=True),
-            Upgrade("Forceful Swing", "Your attacks knock enemies back", "knockback", 1, "uncommon", unique=True),
+            Upgrade("Magic Carrots", "A blue carrot circles you for 3s every 10s", "magic_carrots", 1, "epic", unique=False),
         ]
         return upgrades
     
@@ -91,14 +74,28 @@ class UpgradeManager:
     def show_upgrade_screen(self):
         """Показывает экран выбора улучшений"""
         self.showing_upgrade_screen = True
-        self.upgrade_options = self.get_random_upgrades(3)
+        # Первый апгрейд — обязательно Magic Carrots
+        if self.level == 2 and not any(u.effect_type == 'magic_carrots' for u in self.player_upgrades):
+            magic_carrot = next(u for u in self.available_upgrades if u.effect_type == 'magic_carrots')
+            others = [u for u in self.available_upgrades if u is not magic_carrot]
+            self.upgrade_options = [magic_carrot] + random.sample(others, 2)
+            random.shuffle(self.upgrade_options)
+        # Второй апгрейд — обязательно Magic Carrots, если морковок < 5
+        elif self.level == 3 and hasattr(self, 'player') and getattr(self.player, 'magic_carrots_count', 0) < 5:
+            magic_carrot = next(u for u in self.available_upgrades if u.effect_type == 'magic_carrots')
+            others = [u for u in self.available_upgrades if u is not magic_carrot]
+            self.upgrade_options = [magic_carrot] + random.sample(others, 2)
+            random.shuffle(self.upgrade_options)
+        else:
+            self.upgrade_options = self.get_random_upgrades(3)
     
     def get_random_upgrades(self, count):
         """Возвращает случайные улучшения для выбора"""
-        # Фильтруем: уникальные апгрейды — только если не взяты, неуникальные — всегда
         available = []
         for upgrade in self.available_upgrades:
-            if upgrade.unique:
+            if upgrade.effect_type == 'magic_carrots':
+                available.append(upgrade)
+            elif upgrade.unique:
                 if upgrade not in self.player_upgrades:
                     available.append(upgrade)
             else:
@@ -119,6 +116,10 @@ class UpgradeManager:
     
     def apply_upgrade_to_player(self, player, upgrade):
         """Применяет улучшение к игроку"""
+        # Сначала вызываем кастомную логику игрока
+        if hasattr(player, 'apply_upgrade'):
+            player.apply_upgrade(upgrade)
+        # Далее — стандартные параметры (на случай если что-то ещё)
         if upgrade.effect_type == "max_health":
             player.max_health += upgrade.effect_value
             player.health = min(player.health + upgrade.effect_value, player.max_health)

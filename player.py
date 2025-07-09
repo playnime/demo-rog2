@@ -3,10 +3,11 @@ from settings import *
 import random
 from attack import Attack, SwingAttack
 import os
+import math
 
 class Player(pygame.sprite.Sprite):
     def __init__(self, game, x, y):
-        super().__init__(game.all_sprites)
+        super().__init__()
         self.game = game
         # --- Анимация кролика ---
         # Загружаем кадры анимации ходьбы вправо
@@ -63,6 +64,23 @@ class Player(pygame.sprite.Sprite):
         self.dodge_chance = 0
         self.explosive_attack = False
         self.knockback_attack = False
+        
+        # --- Magic Carrots ---
+        self.magic_carrots_active = False
+        self.magic_carrots_timer = 0
+        self.magic_carrots_cooldown = 10000  # 10 секунд
+        self.magic_carrots_duration = 3000   # 3 секунды
+        self.magic_carrots_last_time = 0
+        self.magic_carrots_angle = 0
+        self.has_magic_carrots = False
+        self.magic_carrots_count = 0  # начальное количество морковок
+        self.magic_carrots_image = None
+        try:
+            img = pygame.image.load(os.path.join("assets", "blue_carrot.png")).convert_alpha()
+            self.magic_carrots_image = pygame.transform.scale(img, (img.get_width()*2, img.get_height()*2))
+        except Exception:
+            self.magic_carrots_image = pygame.Surface((48, 48), pygame.SRCALPHA)
+            pygame.draw.ellipse(self.magic_carrots_image, (80, 180, 255), (0, 0, 48, 24))
         
         # Last attack time
         self.last_attack_time = 0
@@ -137,6 +155,34 @@ class Player(pygame.sprite.Sprite):
                 self.image = self.walk_right_frames[self.current_frame] if self.is_moving else self.walk_right_frames[0]
             else:
                 self.image = self.walk_left_frames[self.current_frame] if self.is_moving else self.walk_left_frames[0]
+        # --- Magic Carrots update ---
+        if self.has_magic_carrots:
+            now = pygame.time.get_ticks()
+            if self.magic_carrots_active:
+                if now - self.magic_carrots_last_time > self.magic_carrots_duration:
+                    self.magic_carrots_active = False
+                    self.magic_carrots_last_time = now
+            else:
+                if now - self.magic_carrots_last_time > self.magic_carrots_cooldown:
+                    self.magic_carrots_active = True
+                    self.magic_carrots_last_time = now
+            if self.magic_carrots_active:
+                self.magic_carrots_angle += 0.12  # скорость вращения
+                if self.magic_carrots_angle > 2 * 3.14159:
+                    self.magic_carrots_angle -= 2 * 3.14159
+                # --- Проверка столкновений с врагами для каждой морковки ---
+                px, py = self.rect.center
+                radius = 120
+                for i in range(self.magic_carrots_count):
+                    angle = self.magic_carrots_angle + i * (2 * math.pi / self.magic_carrots_count)
+                    carrot_x = px + radius * math.cos(angle)
+                    carrot_y = py + radius * math.sin(angle)
+                    carrot_rect = self.magic_carrots_image.get_rect(center=(carrot_x, carrot_y))
+                    for enemy in self.game.enemies:
+                        if carrot_rect.colliderect(enemy.rect):
+                            if not hasattr(enemy, f'carrot_last_hit_{i}') or now - getattr(enemy, f'carrot_last_hit_{i}', 0) > 300:
+                                enemy.take_damage(5)
+                                setattr(enemy, f'carrot_last_hit_{i}', now)
         # Обновляем позицию rect
         self.rect.x = self.x
         self.rect.y = self.y
@@ -209,3 +255,22 @@ class Player(pygame.sprite.Sprite):
         if self.explosive_attack:
             attack.explosive = True
         return attack
+
+    def draw(self, surface, camera):
+        # Сначала рисуем морковки, если активны
+        if self.has_magic_carrots and self.magic_carrots_active and self.magic_carrots_image:
+            px, py = self.rect.center
+            radius = 120
+            for i in range(self.magic_carrots_count):
+                angle = self.magic_carrots_angle + i * (2 * math.pi / self.magic_carrots_count)
+                carrot_x = px + radius * math.cos(angle) + camera.offset.x
+                carrot_y = py + radius * math.sin(angle) + camera.offset.y
+                rect = self.magic_carrots_image.get_rect(center=(carrot_x, carrot_y))
+                surface.blit(self.magic_carrots_image, rect)
+        # Затем рисуем самого игрока
+        surface.blit(self.image, camera.apply(self))
+
+    def apply_upgrade(self, upgrade):
+        if upgrade.effect_type == "magic_carrots":
+            self.has_magic_carrots = True
+            self.magic_carrots_count = min(self.magic_carrots_count + 1, 5)

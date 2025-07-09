@@ -260,7 +260,7 @@ class Game:
             for sprite in self.all_sprites:
                 if sprite is not self.player:
                     game_surface.blit(sprite.image, self.camera.apply(sprite))
-            game_surface.blit(self.player.image, self.camera.apply(self.player))
+            self.player.draw(game_surface, self.camera)
             # UI
             draw_health_bar(game_surface, 10, 10, self.player.health, self.player.max_health)
             self.upgrade_manager.draw_progress(game_surface)
