@@ -1,26 +1,46 @@
 import pygame
 import os
-from settings import TILE_SIZE
+from settings import *
 
 class ExperienceOrb(pygame.sprite.Sprite):
     def __init__(self, game, x, y):
-        super().__init__(game.experience_orbs)
+        super().__init__()
         self.game = game
-        # Загружаем текстуру морковки вместо создания круга
         self.image = pygame.image.load(os.path.join("assets", "carrot.png")).convert_alpha()
-        # Масштабируем морковку до подходящего размера
-        orb_size = TILE_SIZE // 1  # размер сферы опыта (увеличили с //2 до //1.5)
-        self.image = pygame.transform.scale(self.image, (orb_size, orb_size))
-        self.rect = self.image.get_rect(center=(x, y))
-        self.speed = 2
+        self.rect = self.image.get_rect()
+        self.rect.center = (x, y)
+        self.lifetime = 10000  # 10 seconds
+        self.spawn_time = pygame.time.get_ticks()
 
     def update(self):
-        # Магнит: если игрок близко, сфера летит к нему
-        player = self.game.player
-        dx = player.rect.centerx - self.rect.centerx
-        dy = player.rect.centery - self.rect.centery
-        dist = (dx ** 2 + dy ** 2) ** 0.5
-        if dist < TILE_SIZE * 2:
-            if dist > 1:
-                self.rect.x += int(self.speed * dx / dist)
-                self.rect.y += int(self.speed * dy / dist) 
+        # Remove after lifetime
+        if pygame.time.get_ticks() - self.spawn_time > self.lifetime:
+            self.kill()
+            return
+        
+        # Check collision with player
+        if self.rect.colliderect(self.game.player.rect):
+            self.game.upgrade_manager.on_experience_orb_collected()
+            self.kill()
+
+class Carrot(pygame.sprite.Sprite):
+    def __init__(self, game, x, y):
+        super().__init__()
+        self.game = game
+        self.image = pygame.image.load(os.path.join("assets", "carrot.png")).convert_alpha()
+        self.rect = self.image.get_rect()
+        self.rect.center = (x, y)
+        # Убираем ограничение времени жизни для морковок
+        # self.lifetime = 10000  # 10 seconds
+        # self.spawn_time = pygame.time.get_ticks()
+
+    def update(self):
+        # Убираем проверку времени жизни - морковки не исчезают автоматически
+        # if pygame.time.get_ticks() - self.spawn_time > self.lifetime:
+        #     self.kill()
+        #     return
+        
+        # Check collision with player
+        if self.rect.colliderect(self.game.player.rect):
+            self.game.upgrade_manager.on_experience_orb_collected()
+            self.kill() 

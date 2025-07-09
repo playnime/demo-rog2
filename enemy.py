@@ -2,7 +2,7 @@ import pygame
 from settings import *
 import random
 import math
-from experience_orb import ExperienceOrb
+from experience_orb import ExperienceOrb, Carrot
 
 def create_enemy_image(color, size=TILE_SIZE):
     """Creates an enemy image of the given color"""
@@ -15,7 +15,7 @@ def create_enemy_image(color, size=TILE_SIZE):
     return image
 
 def tint_image(image, color):
-    """Changes the hue of the image"""
+    """Tints an image with a color"""
     tinted = image.copy()
     tinted.fill(color, special_flags=pygame.BLEND_MULT)
     return tinted
@@ -122,18 +122,16 @@ class Enemy(pygame.sprite.Sprite):
                 self.rect.y = int(self.y)
                 # Optionally: also move 'other' a bit for smoother effect
 
-        # Check collision with player for damage
-        if self.rect.colliderect(self.game.player.rect):
-            now = pygame.time.get_ticks()
-            if now - self.last_attack_time > self.attack_cooldown:
-                self.game.player.take_damage(self.damage)
-                self.last_attack_time = now
-
         # Check collision with player (don't allow passing through)
         if self.rect.colliderect(self.game.player.rect):
             self.x, self.y = old_x, old_y
             self.rect.x = int(self.x)
             self.rect.y = int(self.y)
+            # --- Наносим урон игроку ---
+            now = pygame.time.get_ticks()
+            if now - self.last_attack_time > self.attack_cooldown:
+                self.game.player.take_damage(self.damage)
+                self.last_attack_time = now
 
         # Flash effect update
         if self.flash_time > 0:
@@ -188,49 +186,64 @@ class BasicEnemy(Enemy):
     def __init__(self, game, x, y):
         level = getattr(game.upgrade_manager, 'level', 1)
         hp = 50 + int(level * 3)
-        dmg = 5 + int(level * 0.5)
-        super().__init__(game, x, y, "assets/basic_gryavol.png", 1.5, hp, dmg, 500, (255, 255, 255))
+        dmg = (5 + int(level * 0.5)) // 2  # Уменьшаем урон в 2 раза
+        super().__init__(game, x, y, "assets/basic_gryavol.png", 1.5 / 2, hp, dmg, 500, (255, 255, 255))  # Уменьшаем скорость в 2 раза
 
     def kill(self):
-        # Спавним сферу опыта на позиции врага
-        orb = ExperienceOrb(self.game, self.rect.centerx, self.rect.centery)
-        self.game.experience_orbs.add(orb)
+        # Спавним морковки на позиции врага
+        for _ in range(1):  # 1 морковка для остальных врагов
+            offset_x = random.randint(-10, 10)
+            offset_y = random.randint(-10, 10)
+            carrot = Carrot(self.game, self.rect.centerx + offset_x, self.rect.centery + offset_y)
+            self.game.carrots.add(carrot)
         super().kill()
 
 class FastEnemy(Enemy):
     def __init__(self, game, x, y):
         level = getattr(game.upgrade_manager, 'level', 1)
         hp = 30 + int(level * 2)
-        dmg = 3 + int(level * 0.3)
-        super().__init__(game, x, y, "assets/basic_yeti.png", 2.5, hp, dmg, 400, (100, 200, 255))
+        dmg = (3 + int(level * 0.3)) // 2  # Уменьшаем урон в 2 раза
+        super().__init__(game, x, y, "assets/basic_yeti.png", 2.5 / 2, hp, dmg, 400, (100, 200, 255))  # Уменьшаем скорость в 2 раза
 
     def kill(self):
-        orb = ExperienceOrb(self.game, self.rect.centerx, self.rect.centery)
-        self.game.experience_orbs.add(orb)
+        # Спавним морковки на позиции врага
+        for _ in range(1):  # 1 морковка для остальных врагов
+            offset_x = random.randint(-10, 10)
+            offset_y = random.randint(-10, 10)
+            carrot = Carrot(self.game, self.rect.centerx + offset_x, self.rect.centery + offset_y)
+            self.game.carrots.add(carrot)
         super().kill()
 
 class StrongEnemy(Enemy):
     def __init__(self, game, x, y):
         level = getattr(game.upgrade_manager, 'level', 1)
         hp = 120 + int(level * 6)
-        dmg = 10 + int(level * 1.0)
-        super().__init__(game, x, y, "assets/basic_gryavol.png", 1.0, hp, dmg, 700, (255, 100, 100))
+        dmg = (10 + int(level * 1.0)) // 2  # Уменьшаем урон в 2 раза
+        super().__init__(game, x, y, "assets/basic_gryavol.png", 1.0 / 2, hp, dmg, 700, (255, 100, 100))  # Уменьшаем скорость в 2 раза
 
     def kill(self):
-        orb = ExperienceOrb(self.game, self.rect.centerx, self.rect.centery)
-        self.game.experience_orbs.add(orb)
+        # Спавним морковки на позиции врага
+        for _ in range(1):  # 1 морковка для остальных врагов
+            offset_x = random.randint(-10, 10)
+            offset_y = random.randint(-10, 10)
+            carrot = Carrot(self.game, self.rect.centerx + offset_x, self.rect.centery + offset_y)
+            self.game.carrots.add(carrot)
         super().kill()
 
 class BossEnemy(Enemy):
     def __init__(self, game, x, y):
         level = getattr(game.upgrade_manager, 'level', 1)
         hp = 500 + int(level * 30)
-        dmg = 20 + int(level * 2.5)
-        super().__init__(game, x, y, "assets/basic_yeti.png", 0.7, hp, dmg, 1200, (255, 255, 0))
+        dmg = (20 + int(level * 2.5)) // 2  # Уменьшаем урон в 2 раза
+        super().__init__(game, x, y, "assets/basic_yeti.png", 0.7 / 2, hp, dmg, 1200, (255, 255, 0))  # Уменьшаем скорость в 2 раза
 
     def kill(self):
-        orb = ExperienceOrb(self.game, self.rect.centerx, self.rect.centery)
-        self.game.experience_orbs.add(orb)
+        # Спавним морковки на позиции врага
+        for _ in range(1):  # 1 морковка для остальных врагов
+            offset_x = random.randint(-10, 10)
+            offset_y = random.randint(-10, 10)
+            carrot = Carrot(self.game, self.rect.centerx + offset_x, self.rect.centery + offset_y)
+            self.game.carrots.add(carrot)
         super().kill()
 
 # Fox enemies - три версии лисы с анимацией
@@ -238,39 +251,51 @@ class FoxEnemy(Enemy):
     def __init__(self, game, x, y):
         level = getattr(game.upgrade_manager, 'level', 1)
         hp = 40 + int(level * 2.5)
-        dmg = 4 + int(level * 0.4)
+        dmg = (4 + int(level * 0.4)) // 2  # Уменьшаем урон в 2 раза
         animation_frames = ["assets/fox_anim1.png", "assets/fox_anim2.png", "assets/fox_anim3.png"]
-        super().__init__(game, x, y, None, 1.8, hp, dmg, 450, None, animation_frames, 300)
+        super().__init__(game, x, y, None, 1.8 / 2, hp, dmg, 450, None, animation_frames, 300)  # Уменьшаем скорость в 2 раза
 
     def kill(self):
-        orb = ExperienceOrb(self.game, self.rect.centerx, self.rect.centery)
-        self.game.experience_orbs.add(orb)
+        # Спавним морковки на позиции врага
+        for _ in range(1):  # 1 морковка для обычных лис
+            offset_x = random.randint(-15, 15)
+            offset_y = random.randint(-15, 15)
+            carrot = Carrot(self.game, self.rect.centerx + offset_x, self.rect.centery + offset_y)
+            self.game.carrots.add(carrot)
         super().kill()
 
 class BlackFoxEnemy(Enemy):
     def __init__(self, game, x, y):
         level = getattr(game.upgrade_manager, 'level', 1)
         hp = 80 + int(level * 4)
-        dmg = 12 + int(level * 1.2)
+        dmg = (12 + int(level * 1.2)) // 2  # Уменьшаем урон в 2 раза
         animation_frames = ["assets/fox_anim1.png", "assets/fox_anim2.png", "assets/fox_anim3.png"]
-        super().__init__(game, x, y, None, 0.8, hp, dmg, 800, (50, 50, 50), animation_frames, 400)
+        super().__init__(game, x, y, None, 0.8 / 2, hp, dmg, 800, (50, 50, 50), animation_frames, 400)  # Уменьшаем скорость в 2 раза
 
     def kill(self):
-        orb = ExperienceOrb(self.game, self.rect.centerx, self.rect.centery)
-        self.game.experience_orbs.add(orb)
+        # Спавним морковки на позиции врага
+        for _ in range(2):  # 2 морковки для черных животных
+            offset_x = random.randint(-15, 15)
+            offset_y = random.randint(-15, 15)
+            carrot = Carrot(self.game, self.rect.centerx + offset_x, self.rect.centery + offset_y)
+            self.game.carrots.add(carrot)
         super().kill()
 
 class RedFoxEnemy(Enemy):
     def __init__(self, game, x, y):
         level = getattr(game.upgrade_manager, 'level', 1)
         hp = 25 + int(level * 1.5)
-        dmg = 2 + int(level * 0.2)
+        dmg = (2 + int(level * 0.2)) // 2  # Уменьшаем урон в 2 раза
         animation_frames = ["assets/fox_anim1.png", "assets/fox_anim2.png", "assets/fox_anim3.png"]
-        super().__init__(game, x, y, None, 3.2, hp, dmg, 300, (255, 100, 100), animation_frames, 200)
+        super().__init__(game, x, y, None, 3.2 / 2, hp, dmg, 300, (255, 100, 100), animation_frames, 200)  # Уменьшаем скорость в 2 раза
 
     def kill(self):
-        orb = ExperienceOrb(self.game, self.rect.centerx, self.rect.centery)
-        self.game.experience_orbs.add(orb)
+        # Спавним морковки на позиции врага
+        for _ in range(2):  # 2 морковки для красных лис
+            offset_x = random.randint(-15, 15)
+            offset_y = random.randint(-15, 15)
+            carrot = Carrot(self.game, self.rect.centerx + offset_x, self.rect.centery + offset_y)
+            self.game.carrots.add(carrot)
         super().kill()
 
 class BoarEnemy(Enemy):
@@ -279,8 +304,8 @@ class BoarEnemy(Enemy):
         level = getattr(game.upgrade_manager, 'level', 1)
         # На порядок сильнее остальных врагов
         hp = 400 + int(level * 20)
-        dmg = 40 + int(level * 4)
-        speed = 1.2
+        dmg = (40 + int(level * 4)) // 2  # Уменьшаем урон в 2 раза
+        speed = 1.2 / 2  # Уменьшаем скорость в 2 раза
         animation_frames = [
             "assets/boar_anim1.png",
             "assets/boar_anim2.png",
@@ -292,9 +317,12 @@ class BoarEnemy(Enemy):
         super().__init__(game, x, y, None, speed, hp, dmg, 900, tint, animation_frames, 250)
 
     def kill(self):
-        # Спавним сферу опыта на позиции врага
-        orb = ExperienceOrb(self.game, self.rect.centerx, self.rect.centery)
-        self.game.experience_orbs.add(orb)
+        # Спавним морковки на позиции врага
+        for _ in range(5):  # 5 морковок для кабанов и коров
+            offset_x = random.randint(-20, 20)
+            offset_y = random.randint(-20, 20)
+            carrot = Carrot(self.game, self.rect.centerx + offset_x, self.rect.centery + offset_y)
+            self.game.carrots.add(carrot)
         super().kill()
 
 class ChickenEnemy(Enemy):
@@ -303,8 +331,8 @@ class ChickenEnemy(Enemy):
         level = getattr(game.upgrade_manager, 'level', 1)
         # Характеристики можно варьировать по аналогии с другими врагами
         hp_list = [35 + int(level * 2), 60 + int(level * 3.5), 20 + int(level * 1.2)]
-        dmg_list = [4 + int(level * 0.4), 8 + int(level * 0.8), 2 + int(level * 0.2)]
-        speed_list = [2.0, 1.2, 3.0]
+        dmg_list = [(4 + int(level * 0.4)) // 2, (8 + int(level * 0.8)) // 2, (2 + int(level * 0.2)) // 2]  # Уменьшаем урон в 2 раза
+        speed_list = [2.0 / 2, 1.2 / 2, 3.0 / 2]  # Уменьшаем скорость в 2 раза
         animation_frames = [
             "assets/chicken_anim1.png",
             "assets/chicken_anim2.png",
@@ -318,11 +346,22 @@ class ChickenEnemy(Enemy):
         dmg = dmg_list[color_variant % 3]
         speed = speed_list[color_variant % 3]
         super().__init__(game, x, y, None, speed, hp, dmg, 500, tint, animation_frames, 220)
+        self.color_variant = color_variant  # Сохраняем color_variant как атрибут
 
     def kill(self):
-        # Спавним сферу опыта на позиции врага
-        orb = ExperienceOrb(self.game, self.rect.centerx, self.rect.centery)
-        self.game.experience_orbs.add(orb)
+        # Спавним морковки на позиции врага
+        if self.color_variant == 1:  # черная курица
+            for _ in range(2):  # 2 морковки для черных животных
+                offset_x = random.randint(-15, 15)
+                offset_y = random.randint(-15, 15)
+                carrot = Carrot(self.game, self.rect.centerx + offset_x, self.rect.centery + offset_y)
+                self.game.carrots.add(carrot)
+        else:  # обычная и красная курица
+            for _ in range(1):  # 1 морковка для обычных и красных животных
+                offset_x = random.randint(-15, 15)
+                offset_y = random.randint(-15, 15)
+                carrot = Carrot(self.game, self.rect.centerx + offset_x, self.rect.centery + offset_y)
+                self.game.carrots.add(carrot)
         super().kill()
 
 class CowEnemy(Enemy):
@@ -331,8 +370,8 @@ class CowEnemy(Enemy):
         level = getattr(game.upgrade_manager, 'level', 1)
         # Характеристики как у кабана, но быстрее
         hp = 400 + int(level * 20)
-        dmg = 40 + int(level * 4)
-        speed = 1.8  # Быстрее кабана (1.2)
+        dmg = (40 + int(level * 4)) // 2  # Уменьшаем урон в 2 раза
+        speed = 1.8 / 2  # Уменьшаем скорость в 2 раза
         animation_frames = [
             "assets/cow-anim1.png",
             "assets/cow-anim2.png", 
@@ -344,9 +383,12 @@ class CowEnemy(Enemy):
         super().__init__(game, x, y, None, speed, hp, dmg, 900, tint, animation_frames, 250)
 
     def kill(self):
-        # Спавним сферу опыта на позиции врага
-        orb = ExperienceOrb(self.game, self.rect.centerx, self.rect.centery)
-        self.game.experience_orbs.add(orb)
+        # Спавним морковки на позиции врага
+        for _ in range(5):  # 5 морковок для коров
+            offset_x = random.randint(-20, 20)
+            offset_y = random.randint(-20, 20)
+            carrot = Carrot(self.game, self.rect.centerx + offset_x, self.rect.centery + offset_y)
+            self.game.carrots.add(carrot)
         super().kill()
 
 class LamaEnemy(Enemy):
@@ -355,8 +397,8 @@ class LamaEnemy(Enemy):
         level = getattr(game.upgrade_manager, 'level', 1)
         # Характеристики для трёх видов ламы
         hp_list = [50 + int(level * 3), 80 + int(level * 4), 35 + int(level * 2)]
-        dmg_list = [5 + int(level * 0.5), 8 + int(level * 0.8), 3 + int(level * 0.3)]
-        speed_list = [1.5, 1.1, 2.2]
+        dmg_list = [(5 + int(level * 0.5)) // 2, (8 + int(level * 0.8)) // 2, (3 + int(level * 0.3)) // 2]  # Уменьшаем урон в 2 раза
+        speed_list = [1.5 / 2, 1.1 / 2, 2.2 / 2]  # Уменьшаем скорость в 2 раза
         animation_frames = [
             "assets/lama_anim1.png",
             "assets/lama_anim2.png",
@@ -370,11 +412,22 @@ class LamaEnemy(Enemy):
         dmg = dmg_list[color_variant % 3]
         speed = speed_list[color_variant % 3]
         super().__init__(game, x, y, None, speed, hp, dmg, 500, tint, animation_frames, 220)
+        self.color_variant = color_variant  # Сохраняем color_variant как атрибут
 
     def kill(self):
-        # Спавним сферу опыта на позиции врага
-        orb = ExperienceOrb(self.game, self.rect.centerx, self.rect.centery)
-        self.game.experience_orbs.add(orb)
+        # Спавним морковки на позиции врага
+        if self.color_variant == 1:  # черная лама
+            for _ in range(2):  # 2 морковки для черных животных
+                offset_x = random.randint(-15, 15)
+                offset_y = random.randint(-15, 15)
+                carrot = Carrot(self.game, self.rect.centerx + offset_x, self.rect.centery + offset_y)
+                self.game.carrots.add(carrot)
+        else:  # обычная и красная лама
+            for _ in range(1):  # 1 морковка для обычных и красных животных
+                offset_x = random.randint(-15, 15)
+                offset_y = random.randint(-15, 15)
+                carrot = Carrot(self.game, self.rect.centerx + offset_x, self.rect.centery + offset_y)
+                self.game.carrots.add(carrot)
         super().kill()
 
 class PigEnemy(Enemy):
@@ -382,8 +435,8 @@ class PigEnemy(Enemy):
         # Характеристики как у FastEnemy (yeti)
         level = getattr(game.upgrade_manager, 'level', 1)
         hp = 30 + int(level * 2)
-        dmg = 3 + int(level * 0.3)
-        speed = 2.5
+        dmg = (3 + int(level * 0.3)) // 2  # Уменьшаем урон в 2 раза
+        speed = 2.5 / 2  # Уменьшаем скорость в 2 раза
         animation_frames = [
             "assets/pig_anim1.png",
             "assets/pig_anim2.png",
@@ -398,9 +451,12 @@ class PigEnemy(Enemy):
         self.rect.y = int(self.y)
 
     def kill(self):
-        # Спавним сферу опыта на позиции врага
-        orb = ExperienceOrb(self.game, self.rect.centerx, self.rect.centery)
-        self.game.experience_orbs.add(orb)
+        # Спавним морковки на позиции врага
+        for _ in range(1):  # 1 морковка для остальных врагов
+            offset_x = random.randint(-10, 10)
+            offset_y = random.randint(-10, 10)
+            carrot = Carrot(self.game, self.rect.centerx + offset_x, self.rect.centery + offset_y)
+            self.game.carrots.add(carrot)
         super().kill()
 
 class SheepEnemy(Enemy):
@@ -408,7 +464,7 @@ class SheepEnemy(Enemy):
         # Овца: быстрая, наносит много урона, но умирает с одного удара
         level = getattr(game.upgrade_manager, 'level', 1)
         hp = 1  # Умирает с одного удара
-        dmg = 15 + int(level * 1.5)  # Высокий урон
+        dmg = (15 + int(level * 1.5)) // 2  # Уменьшаем урон в 2 раза
         # Анимация овцы
         animation_frames = [
             "assets/sheep-anim1.png",
@@ -416,12 +472,15 @@ class SheepEnemy(Enemy):
             "assets/sheep-anim3.png",
             "assets/sheep-anim4.png"
         ]
-        super().__init__(game, x, y, None, 3.5, hp, dmg, 300, (255, 255, 255), animation_frames, 150)
+        super().__init__(game, x, y, None, 3.5 / 2, hp, dmg, 300, (255, 255, 255), animation_frames, 150)  # Уменьшаем скорость в 2 раза
 
     def kill(self):
-        # Спавним сферу опыта на позиции врага
-        orb = ExperienceOrb(self.game, self.rect.centerx, self.rect.centery)
-        self.game.experience_orbs.add(orb)
+        # Спавним морковки на позиции врага
+        for _ in range(1):  # 1 морковка для остальных врагов
+            offset_x = random.randint(-10, 10)
+            offset_y = random.randint(-10, 10)
+            carrot = Carrot(self.game, self.rect.centerx + offset_x, self.rect.centery + offset_y)
+            self.game.carrots.add(carrot)
         super().kill()
 
 class DamageNumber(pygame.sprite.Sprite):

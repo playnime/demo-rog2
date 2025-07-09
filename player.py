@@ -106,6 +106,12 @@ class Player(pygame.sprite.Sprite):
         self.rect.y = self.y
 
     def update(self):
+        # Если игрок мёртв — ничего не делаем
+        if self.health <= 0:
+            if self.game.state != 'game_over':
+                self.game.last_level = self.game.upgrade_manager.level
+                self.game.state = 'game_over'
+            return
         keys = pygame.key.get_pressed()
         dx, dy = 0, 0
         if keys[pygame.K_w]:

@@ -55,8 +55,8 @@ class UpgradeManager:
             self.level += 1
             self.show_upgrade_screen()
             self.current_kills = 0
-            # Нелинейный рост требуемого опыта
-            self.kills_until_upgrade = int(self.kills_until_upgrade * 1.5)
+            # Сбалансированный рост требуемого опыта
+            self.kills_until_upgrade = int(self.kills_until_upgrade * 1.35)
             # Проверяем, нужно ли спавнить босса
             if self.level == 5 and not self.boss_spawned:
                 self.boss_spawned = True

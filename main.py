@@ -10,7 +10,7 @@ from camera import Camera
 from attack import Attack
 from utils import draw_health_bar
 from upgrade_system import UpgradeManager
-from experience_orb import ExperienceOrb
+from experience_orb import ExperienceOrb, Carrot
 
 pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -49,6 +49,7 @@ class Game:
         self.all_sprites = pygame.sprite.Group()
         self.enemies = pygame.sprite.Group()
         self.experience_orbs = pygame.sprite.Group()  # Новая группа для сфер опыта
+        self.carrots = pygame.sprite.Group()  # Группа для морковок
         # Load map from Lua file
         self.map = Map(self, lua_map_path="assets/map/final_map.lua")
         map_width = self.map.width
@@ -93,32 +94,47 @@ class Game:
             spawn_y = max(0, min(self.map.height - 1, spawn_y))
         # Выбираем тип врага в зависимости от уровня
         level = self.upgrade_manager.level
-        # Добавляем курицу (три варианта) в пул врагов
-        enemy_types = [BasicEnemy, FastEnemy, StrongEnemy, FoxEnemy, BlackFoxEnemy, RedFoxEnemy,
-                      lambda g, x, y: ChickenEnemy(g, x, y, 0),
-                      lambda g, x, y: ChickenEnemy(g, x, y, 1),
-                      lambda g, x, y: ChickenEnemy(g, x, y, 2),
-                      lambda g, x, y: LamaEnemy(g, x, y, 0),  # обычная лама
-                      lambda g, x, y: LamaEnemy(g, x, y, 1),  # тёмная лама
-                      lambda g, x, y: LamaEnemy(g, x, y, 2),  # красная лама
-                      PigEnemy,  # свинья
-                      SheepEnemy]  # овца
-        # После 3 уровня добавляем кабанов
-        if level >= 4:
-            # Добавляем BoarEnemy с тремя цветами
-            for i in range(3):
-                if random.random() < 0.33:
-                    enemy = BoarEnemy(self, spawn_x, spawn_y, color_variant=i)
-                    self.all_sprites.add(enemy)
-                    self.enemies.add(enemy)
-                    return
-            # Добавляем CowEnemy с тремя цветами
-            for i in range(3):
-                if random.random() < 0.25:
-                    enemy = CowEnemy(self, spawn_x, spawn_y, color_variant=i)
-                    self.all_sprites.add(enemy)
-                    self.enemies.add(enemy)
-                    return
+        if level == 1:
+            enemy_types = [BasicEnemy, FastEnemy]
+        elif level == 2:
+            enemy_types = [BasicEnemy, FastEnemy, FoxEnemy, SheepEnemy]
+        elif level == 3 or level == 4:
+            enemy_types = [BasicEnemy, FastEnemy, FoxEnemy, SheepEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 0), PigEnemy]
+        elif level == 5:
+            enemy_types = [BasicEnemy, FastEnemy, FoxEnemy, SheepEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 0), PigEnemy, RedFoxEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 2)]
+        elif level == 6:
+            enemy_types = [BasicEnemy, FastEnemy, FoxEnemy, SheepEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 0), PigEnemy, RedFoxEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 2), BlackFoxEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 1), lambda g, x, y: LamaEnemy(g, x, y, 0)]
+        elif level == 7:
+            enemy_types = [BasicEnemy, FastEnemy, FoxEnemy, SheepEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 0), PigEnemy, RedFoxEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 2), BlackFoxEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 1), lambda g, x, y: LamaEnemy(g, x, y, 0), lambda g, x, y: LamaEnemy(g, x, y, 2)]
+        elif level == 8:
+            enemy_types = [BasicEnemy, FastEnemy, FoxEnemy, SheepEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 0), PigEnemy, RedFoxEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 2), BlackFoxEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 1), lambda g, x, y: LamaEnemy(g, x, y, 0), lambda g, x, y: LamaEnemy(g, x, y, 2)]
+        elif level == 9:
+            enemy_types = [BasicEnemy, FastEnemy, FoxEnemy, SheepEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 0), PigEnemy, RedFoxEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 2), BlackFoxEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 1), lambda g, x, y: LamaEnemy(g, x, y, 0), lambda g, x, y: LamaEnemy(g, x, y, 2), lambda g, x, y: LamaEnemy(g, x, y, 1)]
+        elif level == 10:
+            enemy_types = [BasicEnemy, FastEnemy, FoxEnemy, SheepEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 0), PigEnemy, RedFoxEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 2), BlackFoxEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 1), lambda g, x, y: LamaEnemy(g, x, y, 0), lambda g, x, y: LamaEnemy(g, x, y, 2), lambda g, x, y: LamaEnemy(g, x, y, 1)]
+        elif level == 11:
+            enemy_types = [BasicEnemy, FastEnemy, FoxEnemy, SheepEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 0), PigEnemy, RedFoxEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 2), BlackFoxEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 1), lambda g, x, y: LamaEnemy(g, x, y, 0), lambda g, x, y: LamaEnemy(g, x, y, 2), lambda g, x, y: LamaEnemy(g, x, y, 1), lambda g, x, y: BoarEnemy(g, x, y, 0)]
+        elif level == 12:
+            enemy_types = [BasicEnemy, FastEnemy, FoxEnemy, SheepEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 0), PigEnemy, RedFoxEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 2), BlackFoxEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 1), lambda g, x, y: LamaEnemy(g, x, y, 0), lambda g, x, y: LamaEnemy(g, x, y, 2), lambda g, x, y: LamaEnemy(g, x, y, 1), lambda g, x, y: BoarEnemy(g, x, y, 0)]
+        elif level == 13:
+            enemy_types = [FoxEnemy, SheepEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 0), PigEnemy, RedFoxEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 2), BlackFoxEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 1), lambda g, x, y: LamaEnemy(g, x, y, 0), lambda g, x, y: LamaEnemy(g, x, y, 2), lambda g, x, y: LamaEnemy(g, x, y, 1), lambda g, x, y: BoarEnemy(g, x, y, 0), lambda g, x, y: BoarEnemy(g, x, y, 1), lambda g, x, y: BoarEnemy(g, x, y, 2)]
+        elif level == 14:
+            enemy_types = [SheepEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 0), PigEnemy, RedFoxEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 2), BlackFoxEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 1), lambda g, x, y: LamaEnemy(g, x, y, 0), lambda g, x, y: LamaEnemy(g, x, y, 2), lambda g, x, y: LamaEnemy(g, x, y, 1), lambda g, x, y: BoarEnemy(g, x, y, 0), lambda g, x, y: BoarEnemy(g, x, y, 1), lambda g, x, y: BoarEnemy(g, x, y, 2)]
+        elif level == 15:
+            enemy_types = [SheepEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 0), PigEnemy, RedFoxEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 2), BlackFoxEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 1), lambda g, x, y: LamaEnemy(g, x, y, 0), lambda g, x, y: LamaEnemy(g, x, y, 2), lambda g, x, y: LamaEnemy(g, x, y, 1), lambda g, x, y: BoarEnemy(g, x, y, 0), lambda g, x, y: BoarEnemy(g, x, y, 1), lambda g, x, y: BoarEnemy(g, x, y, 2)]
+        elif level == 16:
+            enemy_types = [SheepEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 0), PigEnemy, RedFoxEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 2), BlackFoxEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 1), lambda g, x, y: LamaEnemy(g, x, y, 0), lambda g, x, y: LamaEnemy(g, x, y, 2), lambda g, x, y: LamaEnemy(g, x, y, 1), lambda g, x, y: BoarEnemy(g, x, y, 0), lambda g, x, y: BoarEnemy(g, x, y, 1), lambda g, x, y: BoarEnemy(g, x, y, 2), lambda g, x, y: CowEnemy(g, x, y, 0), lambda g, x, y: CowEnemy(g, x, y, 1), lambda g, x, y: CowEnemy(g, x, y, 2)]
+        else:
+            # Добавляем курицу (три варианта) в пул врагов
+            enemy_types = [BasicEnemy, FastEnemy, StrongEnemy, FoxEnemy, BlackFoxEnemy, RedFoxEnemy,
+                          lambda g, x, y: ChickenEnemy(g, x, y, 0),
+                          lambda g, x, y: ChickenEnemy(g, x, y, 1),
+                          lambda g, x, y: ChickenEnemy(g, x, y, 2),
+                          lambda g, x, y: LamaEnemy(g, x, y, 0),  # обычная лама
+                          lambda g, x, y: LamaEnemy(g, x, y, 1),  # тёмная лама
+                          lambda g, x, y: LamaEnemy(g, x, y, 2),  # красная лама
+                          PigEnemy,  # свинья
+                          SheepEnemy]  # овца
         enemy_class = random.choice(enemy_types)
         # Если enemy_class — функция (лямбда для ChickenEnemy), вызываем её, иначе создаём как обычно
         if callable(enemy_class) and not isinstance(enemy_class, type):
@@ -244,6 +260,7 @@ class Game:
             if self.state == 'playing' and not self.upgrade_manager.showing_upgrade_screen:
                 self.all_sprites.update()
                 self.experience_orbs.update()
+                self.carrots.update()
                 # Enemy spawn: interval decreases with level
                 current_time = pygame.time.get_ticks()
                 # Новый интервал: минимум 300 мс, быстрее уменьшается с уровнем
@@ -276,6 +293,9 @@ class Game:
             # Теперь — experience orbs (поверх карты, под врагами и игроком)
             for orb in self.experience_orbs:
                 game_surface.blit(orb.image, self.camera.apply(orb))
+            # Отрисовка морковок
+            for carrot in self.carrots:
+                game_surface.blit(carrot.image, self.camera.apply(carrot))
             # Sprites
             for sprite in self.all_sprites:
                 if sprite is not self.player:
