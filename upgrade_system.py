@@ -64,8 +64,9 @@ class UpgradeManager:
         self.current_kills += 1
         if self.current_kills >= self.kills_until_upgrade:
             self.level += 1
-            # Воспроизводим звук повышения уровня
+            # Воспроизводим звук повышения уровня с небольшой задержкой
             if self.lvlup_sound:
+                pygame.time.wait(50)  # Небольшая задержка в 50мс
                 self.lvlup_sound.play()
             self.show_upgrade_screen()
             self.current_kills = 0
@@ -100,8 +101,8 @@ class UpgradeManager:
             others = [u for u in self.available_upgrades if u is not magic_carrot]
             self.upgrade_options = [magic_carrot] + random.sample(others, 2)
             random.shuffle(self.upgrade_options)
-        # Второй апгрейд — обязательно Magic Carrots, если морковок < 5
-        elif self.level == 4 and hasattr(self, 'player') and getattr(self.player, 'magic_carrots_count', 0) < 5:
+        # Второй апгрейд — обязательно Magic Carrots (упрощенная логика)
+        elif self.level == 4 and not any(u.effect_type == 'magic_carrots' for u in self.player_upgrades):
             magic_carrot = next(u for u in self.available_upgrades if u.effect_type == 'magic_carrots')
             others = [u for u in self.available_upgrades if u is not magic_carrot]
             self.upgrade_options = [magic_carrot] + random.sample(others, 2)
