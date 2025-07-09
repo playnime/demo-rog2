@@ -325,6 +325,30 @@ class ChickenEnemy(Enemy):
         self.game.experience_orbs.add(orb)
         super().kill()
 
+class CowEnemy(Enemy):
+    def __init__(self, game, x, y, color_variant=0):
+        # color_variant: 0 — обычная, 1 — тёмная, 2 — красная
+        level = getattr(game.upgrade_manager, 'level', 1)
+        # Характеристики как у кабана, но быстрее
+        hp = 400 + int(level * 20)
+        dmg = 40 + int(level * 4)
+        speed = 1.8  # Быстрее кабана (1.2)
+        animation_frames = [
+            "assets/cow-anim1.png",
+            "assets/cow-anim2.png", 
+            "assets/cow-anim3.png"
+        ]
+        # Цветовые оттенки для трёх вариантов
+        tints = [None, (60, 60, 60), (200, 50, 50)]
+        tint = tints[color_variant % 3]
+        super().__init__(game, x, y, None, speed, hp, dmg, 900, tint, animation_frames, 250)
+
+    def kill(self):
+        # Спавним сферу опыта на позиции врага
+        orb = ExperienceOrb(self.game, self.rect.centerx, self.rect.centery)
+        self.game.experience_orbs.add(orb)
+        super().kill()
+
 class DamageNumber(pygame.sprite.Sprite):
     def __init__(self, game, x, y, value):
         super().__init__(game.all_sprites)

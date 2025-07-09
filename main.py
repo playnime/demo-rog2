@@ -4,7 +4,7 @@ import random
 import math
 from settings import *
 from player import Player
-from enemy import BasicEnemy, FastEnemy, StrongEnemy, BossEnemy, FoxEnemy, BlackFoxEnemy, RedFoxEnemy, BoarEnemy, ChickenEnemy
+from enemy import BasicEnemy, FastEnemy, StrongEnemy, BossEnemy, FoxEnemy, BlackFoxEnemy, RedFoxEnemy, BoarEnemy, ChickenEnemy, CowEnemy
 from map import Map
 from camera import Camera
 from attack import Attack
@@ -104,6 +104,13 @@ class Game:
             for i in range(3):
                 if random.random() < 0.33:
                     enemy = BoarEnemy(self, spawn_x, spawn_y, color_variant=i)
+                    self.all_sprites.add(enemy)
+                    self.enemies.add(enemy)
+                    return
+            # Добавляем CowEnemy с тремя цветами
+            for i in range(3):
+                if random.random() < 0.25:
+                    enemy = CowEnemy(self, spawn_x, spawn_y, color_variant=i)
                     self.all_sprites.add(enemy)
                     self.enemies.add(enemy)
                     return
