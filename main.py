@@ -229,9 +229,7 @@ class Game:
                 elif self.state == 'playing':
                     if event.type == pygame.KEYDOWN:
                         if event.key == pygame.K_SPACE:
-                            attack = self.player.attack()
-                            if attack:
-                                self.all_sprites.add(attack)
+                            self.player.attack()  # Атака будет создана с задержкой в update()
                         # Handle upgrade selection
                         if self.upgrade_manager.showing_upgrade_screen:
                             if event.key == pygame.K_1:
@@ -247,9 +245,7 @@ class Game:
                                 if selected_upgrade:
                                     self.upgrade_manager.apply_upgrade_to_player(self.player, selected_upgrade)
                     if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                        attack = self.player.attack()
-                        if attack:
-                            self.all_sprites.add(attack)
+                        self.player.attack()  # Атака будет создана с задержкой в update()
                 elif self.state == 'paused':
                     # В паузе можно только выйти из паузы (по P)
                     pass
@@ -259,7 +255,15 @@ class Game:
 
             # --- ALWAYS update and draw the scene ---
             if self.state == 'playing' and not self.upgrade_manager.showing_upgrade_screen:
-                self.all_sprites.update()
+                # Обновляем игрока отдельно, чтобы получить отложенную атаку
+                delayed_attack = self.player.update()
+                if delayed_attack:
+                    self.all_sprites.add(delayed_attack)
+                
+                # Обновляем остальные спрайты
+                for sprite in self.all_sprites:
+                    if sprite != self.player:
+                        sprite.update()
                 self.experience_orbs.update()
                 self.carrots.update()
                 # Enemy spawn: interval decreases with level

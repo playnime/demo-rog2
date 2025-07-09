@@ -119,6 +119,11 @@ class Player(pygame.sprite.Sprite):
         # Last attack time
         self.last_attack_time = 0
         
+        # --- Система задержки атаки ---
+        self.attack_delay = 100  # миллисекунды задержки между нажатием и созданием атаки
+        self.pending_attack = None  # ожидающая атака (направление)
+        self.attack_start_time = 0  # время начала атаки
+        
         # --- Переменные для звука ходьбы ---
         self.walk_sound_playing = False
         self.walk_sound_cooldown = 300  # миллисекунды между воспроизведениями звука ходьбы
@@ -299,6 +304,23 @@ class Player(pygame.sprite.Sprite):
                     lightning = LightningAttack(self.game, self, target_enemy)
                     self.game.all_sprites.add(lightning)
                 self.lightning_last_time = now
+        # --- Проверка отложенной атаки ---
+        if self.pending_attack is not None:
+            current_time = pygame.time.get_ticks()
+            if current_time - self.attack_start_time >= self.attack_delay:
+                # Создаём атаку после задержки
+                direction = self.pending_attack
+                attack = SwingAttack(self.game, self, direction)
+                if random.random() < self.critical_chance:
+                    attack.damage *= 2
+                attack.size_multiplier = self.attack_size_multiplier
+                if self.explosive_attack:
+                    attack.explosive = True
+                # Очищаем ожидающую атаку
+                self.pending_attack = None
+                # Возвращаем атаку для добавления в группу спрайтов
+                return attack
+        
         # Обновляем позицию rect
         self.rect.x = self.x
         self.rect.y = self.y
@@ -329,11 +351,7 @@ class Player(pygame.sprite.Sprite):
         """Perform attack. Если direction не задан — вычислить по мыши."""
         if not self.can_attack():
             return None
-        self.last_attack_time = pygame.time.get_ticks()
-        # Включаем анимацию атаки
-        self.is_attacking = True
-        self.attack_anim_timer = 0
-        self.attack_frame = 0 # Сбрасываем кадр атаки при новом ударе
+        
         # Если направление не задано — вычислить по мыши (в мировых координатах)
         if direction is None:
             mouse_x, mouse_y = pygame.mouse.get_pos()
@@ -358,21 +376,28 @@ class Player(pygame.sprite.Sprite):
                 direction = (1, 0)
             else:
                 direction = (dx / length, dy / length)
+        
+        # Сохраняем ожидающую атаку и время её начала
+        self.pending_attack = direction
+        self.attack_start_time = pygame.time.get_ticks()
+        self.last_attack_time = self.attack_start_time
+        
+        # Включаем анимацию атаки сразу
+        self.is_attacking = True
+        self.attack_anim_timer = 0
+        self.attack_frame = 0 # Сбрасываем кадр атаки при новом ударе
+        
         # Определяем направление атаки для анимации
         if direction[0] > 0:
             self.attack_direction = "right"
         elif direction[0] < 0:
             self.attack_direction = "left"
-        # Создаём SwingAttack
-        attack = SwingAttack(self.game, self, direction)
-        if random.random() < self.critical_chance:
-            attack.damage *= 2
-        attack.size_multiplier = self.attack_size_multiplier
-        if self.explosive_attack:
-            attack.explosive = True
+        
+        # Воспроизводим звук меча сразу при нажатии
         if self.sword_sound:
             self.sword_sound.play()
-        return attack
+        
+        return None  # Пока не создаём атаку, только планируем её
 
     def draw(self, surface, camera):
         # Сначала рисуем морковки, если активны
