@@ -282,7 +282,6 @@ class Game:
                     game_surface.blit(sprite.image, self.camera.apply(sprite))
             self.player.draw(game_surface, self.camera)
             # UI
-            draw_health_bar(game_surface, 10, 10, self.player.health, self.player.max_health)
             self.upgrade_manager.draw_progress(game_surface)
             self.upgrade_manager.draw_upgrade_screen(game_surface)
             self.draw_notification(game_surface)

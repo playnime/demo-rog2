@@ -268,7 +268,15 @@ class Player(pygame.sprite.Sprite):
                 rect = self.magic_carrots_image.get_rect(center=(carrot_x, carrot_y))
                 surface.blit(self.magic_carrots_image, rect)
         # Затем рисуем самого игрока
-        surface.blit(self.image, camera.apply(self))
+        player_rect_on_screen = camera.apply(self)
+        surface.blit(self.image, player_rect_on_screen)
+        # Рисуем полосу здоровья под игроком
+        from utils import draw_health_bar
+        bar_width = 40
+        bar_height = 6
+        bar_x = player_rect_on_screen.centerx - bar_width // 2
+        bar_y = player_rect_on_screen.bottom + 4  # чуть ниже спрайта
+        draw_health_bar(surface, bar_x, bar_y, self.health, self.max_health, width=bar_width, height=bar_height)
 
     def apply_upgrade(self, upgrade):
         if upgrade.effect_type == "magic_carrots":
