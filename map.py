@@ -42,7 +42,7 @@ class Map:
             if map_data['layers']:
                 self.tile_ids = map_data['layers'][0]['data']
         else:
-            print("Error loading Lua map, creating default map")
+            print("Ошибка загрузки Lua карты, создается карта по умолчанию")
             self.create_default_map()
 
     def load_from_data(self, level_data):

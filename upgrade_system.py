@@ -36,15 +36,15 @@ class UpgradeManager:
     def create_upgrade_pool(self):
         """Creates the pool of all possible upgrades"""
         upgrades = [
-            Upgrade("Iron Heart", "Increases max health by 25", "max_health", 25, "common", unique=False),
-            Upgrade("Fast Legs", "Increases movement speed by 0.5", "speed", 0.5, "common", unique=False),
-            Upgrade("Sharp Sword", "Increases attack damage by 5", "attack_damage", 5, "common", unique=False),
-            Upgrade("Quick Hand", "Reduces attack delay by 100ms", "attack_speed", 100, "common", unique=False),
-            Upgrade("Long Sword", "Increases attack size by 10%", "attack_size", 0.1, "common", unique=False),
-            Upgrade("Forceful Swing", "Your attacks knock enemies back", "knockback", 1, "uncommon", unique=True),
-            Upgrade("Vampirism", "Restores 5 health per kill", "vampirism", 5, "epic", unique=True),
-            Upgrade("Critical Strike", "20% chance to deal double damage", "critical_chance", 0.2, "epic", unique=True),
-            Upgrade("Magic Carrots", "A blue carrot circles you for 3s every 10s", "magic_carrots", 1, "epic", unique=False),
+            Upgrade("Железное сердце", "Увеличивает максимальное здоровье на 25", "max_health", 25, "common", unique=False),
+            Upgrade("Быстрые ноги", "Увеличивает скорость движения на 0.5", "speed", 0.5, "common", unique=False),
+            Upgrade("Острый меч", "Увеличивает урон атаки на 5", "attack_damage", 5, "common", unique=False),
+            Upgrade("Быстрая рука", "Уменьшает задержку атаки\nна 100мс", "attack_speed", 100, "common", unique=False),
+            Upgrade("Длинный меч", "Увеличивает размер атаки на 10%", "attack_size", 0.1, "common", unique=False),
+            Upgrade("Мощный удар", "Ваши атаки отбрасывают врагов", "knockback", 1, "uncommon", unique=True),
+            Upgrade("Вампиризм", "Восстанавливает 5 здоровья\nза убийство", "vampirism", 5, "epic", unique=True),
+            Upgrade("Критический удар", "20% шанс нанести двойной урон", "critical_chance", 0.2, "epic", unique=True),
+            Upgrade("Волшебные морковки", "Синяя морковка кружит вокруг вас\n3с каждые 10с", "magic_carrots", 1, "epic", unique=False),
         ]
         return upgrades
     
@@ -157,12 +157,12 @@ class UpgradeManager:
         
         # Заголовок
         font_large = pygame.font.SysFont(None, 48)
-        title = font_large.render("CHOOSE AN UPGRADE", True, (255, 255, 255))
+        title = font_large.render("ВЫБЕРИТЕ УЛУЧШЕНИЕ", True, (255, 255, 255))
         screen.blit(title, (WIDTH // 2 - title.get_width() // 2, 50))
         
         # Инструкция
         font_small = pygame.font.SysFont(None, 24)
-        instruction = font_small.render("Press 1, 2 or 3 to choose", True, (200, 200, 200))
+        instruction = font_small.render("Нажмите 1, 2 или 3 для выбора", True, (200, 200, 200))
         screen.blit(instruction, (WIDTH // 2 - instruction.get_width() // 2, 100))
         
         # Отображение улучшений
@@ -186,9 +186,11 @@ class UpgradeManager:
         name_text = font_name.render(upgrade.name, True, upgrade.color)
         screen.blit(name_text, (center_x - name_text.get_width() // 2, y + 10))
         
-        # Описание
-        desc_text = font_desc.render(upgrade.description, True, (200, 200, 200))
-        screen.blit(desc_text, (center_x - desc_text.get_width() // 2, y + 40))
+        # Описание (поддерживает переносы строк)
+        desc_lines = upgrade.description.split('\n')
+        for i, line in enumerate(desc_lines):
+            desc_text = font_desc.render(line, True, (200, 200, 200))
+            screen.blit(desc_text, (center_x - desc_text.get_width() // 2, y + 40 + i * 15))
         
         # Клавиша выбора
         key_text = font_key.render(f"{index + 1}", True, (255, 255, 255))
@@ -203,7 +205,7 @@ class UpgradeManager:
             return
         
         font = pygame.font.SysFont(None, 24)
-        progress_text = font.render(f"Level: {self.level} | Kills to upgrade: {self.current_kills}/{self.kills_until_upgrade}", True, (255, 255, 255))
+        progress_text = font.render(f"Уровень: {self.level} | Убийств до улучшения: {self.current_kills}/{self.kills_until_upgrade}", True, (255, 255, 255))
         screen.blit(progress_text, (10, 60))
         
         # Прогресс-бар

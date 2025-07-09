@@ -155,7 +155,7 @@ class Game:
         self.all_sprites.add(boss)
         self.enemies.add(boss)
         # Show notification about boss appearance
-        self.show_notification("BOSS APPEARED!")
+        self.show_notification("ПОЯВИЛСЯ БОСС!")
 
     def show_notification(self, text):
         """Shows notification on the screen"""
@@ -187,19 +187,19 @@ class Game:
         surface.blit(fps_text, (surface.get_width() - fps_text.get_width() - 10, 10))
 
     def draw_game_over_screen(self, surface):
-        """Draws the Game Over screen with the player's level (English text)"""
+        """Draws the Game Over screen with the player's level (Russian text)"""
         s = pygame.Surface(GAME_SIZE)
         s.set_alpha(200)
         s.fill((0, 0, 0))
         surface.blit(s, (0, 0))
         font = pygame.font.SysFont(None, 80)
-        text = font.render('GAME OVER', True, (255, 50, 50))
+        text = font.render('ИГРА ОКОНЧЕНА', True, (255, 50, 50))
         surface.blit(text, (WIDTH // 2 - text.get_width() // 2, HEIGHT // 2 - 100))
         font2 = pygame.font.SysFont(None, 48)
-        level_text = font2.render(f'Level reached: {self.last_level}', True, (255, 255, 255))
+        level_text = font2.render(f'Достигнут уровень: {self.last_level}', True, (255, 255, 255))
         surface.blit(level_text, (WIDTH // 2 - level_text.get_width() // 2, HEIGHT // 2))
         font3 = pygame.font.SysFont(None, 36)
-        info_text = font3.render('Press ENTER to return to menu', True, (200, 200, 200))
+        info_text = font3.render('Нажмите ENTER для возврата в меню', True, (200, 200, 200))
         surface.blit(info_text, (WIDTH // 2 - info_text.get_width() // 2, HEIGHT // 2 + 80))
         # This screen appears after the player dies
         # Shows the reached level and instruction to return to menu
@@ -320,14 +320,14 @@ class Game:
                 s.fill((30, 30, 30))
                 game_surface.blit(s, (0, 0))
                 font = pygame.font.SysFont(None, 80)
-                text = font.render('PAUSED', True, (255, 255, 255))
+                text = font.render('ПАУЗА', True, (255, 255, 255))
                 game_surface.blit(text, (WIDTH // 2 - text.get_width() // 2, HEIGHT // 2 - 40))
                 # Controls in pause
                 font_ctrl = pygame.font.SysFont(None, 32)
                 pause_ctrls = [
-                    'P — resume',
-                    'F11 — fullscreen',
-                    'ESC — quit'
+                    'P — продолжить',
+                    'F11 — полноэкранный режим',
+                    'ESC — выйти'
                 ]
                 for i, ctrl in enumerate(pause_ctrls):
                     ctrl_text = font_ctrl.render(ctrl, True, (200, 200, 200))
@@ -351,27 +351,27 @@ class Game:
 
             # --- Новый блок: обработка сбора сфер ---
             if self.state == 'playing' and not self.upgrade_manager.showing_upgrade_screen:
-                collected = pygame.sprite.spritecollide(self.player, self.experience_orbs, dokill=True)
+                collected = pygame.sprite.spritecollide(self.player, self.experience_orbs, dokill=True)  # type: ignore
                 for orb in collected:
                     self.upgrade_manager.on_experience_orb_collected()
 
 def draw_menu():
     game_surface.fill((30, 30, 30))
     font = pygame.font.SysFont(None, 60)
-    text = font.render('ROG DEMO', True, (255, 255, 255))
+    text = font.render('ДЕМО ROG', True, (255, 255, 255))
     game_surface.blit(text, (WIDTH // 2 - text.get_width() // 2, HEIGHT // 2 - 100))
     font_small = pygame.font.SysFont(None, 40)
-    play_text = font_small.render('Press ENTER to start', True, (200, 200, 200))
+    play_text = font_small.render('Нажмите ENTER для начала', True, (200, 200, 200))
     game_surface.blit(play_text, (WIDTH // 2 - play_text.get_width() // 2, HEIGHT // 2))
     # Controls
     font_ctrl = pygame.font.SysFont(None, 28)
     controls = [
-        'WASD — move',
-        'LMB or SPACE — attack',
-        '1, 2, 3 — choose upgrade',
-        'P — pause',
-        'F11 — fullscreen',
-        'ESC — quit'
+        'WASD — движение',
+        'ЛКМ или ПРОБЕЛ — атака',
+        '1, 2, 3 — выбор улучшения',
+        'P — пауза',
+        'F11 — полноэкранный режим',
+        'ESC — выйти'
     ]
     for i, ctrl in enumerate(controls):
         ctrl_text = font_ctrl.render(ctrl, True, (180, 180, 180))
