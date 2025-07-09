@@ -6,7 +6,7 @@ import os
 
 class Player(pygame.sprite.Sprite):
     def __init__(self, game, x, y):
-        super().__init__()
+        super().__init__(game.all_sprites)
         self.game = game
         # --- Анимация кролика ---
         # Загружаем кадры анимации ходьбы вправо

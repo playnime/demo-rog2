@@ -273,6 +273,30 @@ class RedFoxEnemy(Enemy):
         self.game.experience_orbs.add(orb)
         super().kill()
 
+class BoarEnemy(Enemy):
+    def __init__(self, game, x, y, color_variant=0):
+        # Цветовые варианты: 0 — обычный, 1 — тёмный, 2 — красный
+        level = getattr(game.upgrade_manager, 'level', 1)
+        # На порядок сильнее остальных врагов
+        hp = 400 + int(level * 20)
+        dmg = 40 + int(level * 4)
+        speed = 1.2
+        animation_frames = [
+            "assets/boar_anim1.png",
+            "assets/boar_anim2.png",
+            "assets/boar_anim3.png"
+        ]
+        # Цвета для трёх вариантов
+        tints = [None, (60, 60, 60), (200, 50, 50)]
+        tint = tints[color_variant % 3]
+        super().__init__(game, x, y, None, speed, hp, dmg, 900, tint, animation_frames, 250)
+
+    def kill(self):
+        # Спавним сферу опыта на позиции врага
+        orb = ExperienceOrb(self.game, self.rect.centerx, self.rect.centery)
+        self.game.experience_orbs.add(orb)
+        super().kill()
+
 class DamageNumber(pygame.sprite.Sprite):
     def __init__(self, game, x, y, value):
         super().__init__(game.all_sprites)

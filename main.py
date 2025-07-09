@@ -4,7 +4,7 @@ import random
 import math
 from settings import *
 from player import Player
-from enemy import BasicEnemy, FastEnemy, StrongEnemy, BossEnemy, FoxEnemy, BlackFoxEnemy, RedFoxEnemy
+from enemy import BasicEnemy, FastEnemy, StrongEnemy, BossEnemy, FoxEnemy, BlackFoxEnemy, RedFoxEnemy, BoarEnemy
 from map import Map
 from camera import Camera
 from attack import Attack
@@ -90,8 +90,18 @@ class Game:
             spawn_y = self.player.y // TILE_SIZE + random.randint(-max_dist, max_dist)
             spawn_x = max(0, min(self.map.width - 1, spawn_x))
             spawn_y = max(0, min(self.map.height - 1, spawn_y))
-        # Randomly select enemy type
+        # Выбираем тип врага в зависимости от уровня
+        level = self.upgrade_manager.level
         enemy_types = [BasicEnemy, FastEnemy, StrongEnemy, FoxEnemy, BlackFoxEnemy, RedFoxEnemy]
+        # После 3 уровня добавляем кабанов
+        if level >= 4:
+            # Добавляем BoarEnemy с тремя цветами
+            for i in range(3):
+                if random.random() < 0.33:
+                    enemy = BoarEnemy(self, spawn_x, spawn_y, color_variant=i)
+                    self.all_sprites.add(enemy)
+                    self.enemies.add(enemy)
+                    return
         enemy_class = random.choice(enemy_types)
         enemy = enemy_class(self, spawn_x, spawn_y)
         self.all_sprites.add(enemy)
