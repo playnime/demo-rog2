@@ -297,6 +297,34 @@ class BoarEnemy(Enemy):
         self.game.experience_orbs.add(orb)
         super().kill()
 
+class ChickenEnemy(Enemy):
+    def __init__(self, game, x, y, color_variant=0):
+        # color_variant: 0 — обычная, 1 — тёмная, 2 — красная
+        level = getattr(game.upgrade_manager, 'level', 1)
+        # Характеристики можно варьировать по аналогии с другими врагами
+        hp_list = [35 + int(level * 2), 60 + int(level * 3.5), 20 + int(level * 1.2)]
+        dmg_list = [4 + int(level * 0.4), 8 + int(level * 0.8), 2 + int(level * 0.2)]
+        speed_list = [2.0, 1.2, 3.0]
+        animation_frames = [
+            "assets/chicken_anim1.png",
+            "assets/chicken_anim2.png",
+            "assets/chicken_anim3.png",
+            "assets/chicken_anim4.png"
+        ]
+        # Цветовые оттенки для трёх вариантов
+        tints = [None, (60, 60, 60), (200, 50, 50)]
+        tint = tints[color_variant % 3]
+        hp = hp_list[color_variant % 3]
+        dmg = dmg_list[color_variant % 3]
+        speed = speed_list[color_variant % 3]
+        super().__init__(game, x, y, None, speed, hp, dmg, 500, tint, animation_frames, 220)
+
+    def kill(self):
+        # Спавним сферу опыта на позиции врага
+        orb = ExperienceOrb(self.game, self.rect.centerx, self.rect.centery)
+        self.game.experience_orbs.add(orb)
+        super().kill()
+
 class DamageNumber(pygame.sprite.Sprite):
     def __init__(self, game, x, y, value):
         super().__init__(game.all_sprites)

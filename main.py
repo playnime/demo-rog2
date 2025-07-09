@@ -4,7 +4,7 @@ import random
 import math
 from settings import *
 from player import Player
-from enemy import BasicEnemy, FastEnemy, StrongEnemy, BossEnemy, FoxEnemy, BlackFoxEnemy, RedFoxEnemy, BoarEnemy
+from enemy import BasicEnemy, FastEnemy, StrongEnemy, BossEnemy, FoxEnemy, BlackFoxEnemy, RedFoxEnemy, BoarEnemy, ChickenEnemy
 from map import Map
 from camera import Camera
 from attack import Attack
@@ -93,7 +93,11 @@ class Game:
             spawn_y = max(0, min(self.map.height - 1, spawn_y))
         # Выбираем тип врага в зависимости от уровня
         level = self.upgrade_manager.level
-        enemy_types = [BasicEnemy, FastEnemy, StrongEnemy, FoxEnemy, BlackFoxEnemy, RedFoxEnemy]
+        # Добавляем курицу (три варианта) в пул врагов
+        enemy_types = [BasicEnemy, FastEnemy, StrongEnemy, FoxEnemy, BlackFoxEnemy, RedFoxEnemy,
+                      lambda g, x, y: ChickenEnemy(g, x, y, 0),
+                      lambda g, x, y: ChickenEnemy(g, x, y, 1),
+                      lambda g, x, y: ChickenEnemy(g, x, y, 2)]
         # После 3 уровня добавляем кабанов
         if level >= 4:
             # Добавляем BoarEnemy с тремя цветами
@@ -104,7 +108,11 @@ class Game:
                     self.enemies.add(enemy)
                     return
         enemy_class = random.choice(enemy_types)
-        enemy = enemy_class(self, spawn_x, spawn_y)
+        # Если enemy_class — функция (лямбда для ChickenEnemy), вызываем её, иначе создаём как обычно
+        if callable(enemy_class) and not isinstance(enemy_class, type):
+            enemy = enemy_class(self, spawn_x, spawn_y)
+        else:
+            enemy = enemy_class(self, spawn_x, spawn_y)
         self.all_sprites.add(enemy)
         self.enemies.add(enemy)
 
