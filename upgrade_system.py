@@ -93,26 +93,8 @@ class UpgradeManager:
     def show_upgrade_screen(self):
         """Показывает экран выбора улучшений"""
         self.showing_upgrade_screen = True
-        # Второй уровень — обязательно Lightning
-        if self.level == 2 and not any(u.effect_type == 'lightning' for u in self.player_upgrades):
-            lightning = next(u for u in self.available_upgrades if u.effect_type == 'lightning')
-            others = [u for u in self.available_upgrades if u is not lightning]
-            self.upgrade_options = [lightning] + random.sample(others, 2)
-            random.shuffle(self.upgrade_options)
-        # Первый апгрейд — обязательно Magic Carrots
-        elif self.level == 3 and not any(u.effect_type == 'magic_carrots' for u in self.player_upgrades):
-            magic_carrot = next(u for u in self.available_upgrades if u.effect_type == 'magic_carrots')
-            others = [u for u in self.available_upgrades if u is not magic_carrot]
-            self.upgrade_options = [magic_carrot] + random.sample(others, 2)
-            random.shuffle(self.upgrade_options)
-        # Второй апгрейд — обязательно Magic Carrots (упрощенная логика)
-        elif self.level == 4 and not any(u.effect_type == 'magic_carrots' for u in self.player_upgrades):
-            magic_carrot = next(u for u in self.available_upgrades if u.effect_type == 'magic_carrots')
-            others = [u for u in self.available_upgrades if u is not magic_carrot]
-            self.upgrade_options = [magic_carrot] + random.sample(others, 2)
-            random.shuffle(self.upgrade_options)
-        else:
-            self.upgrade_options = self.get_random_upgrades(3)
+        # Все бонусы выпадают случайно независимо от уровня
+        self.upgrade_options = self.get_random_upgrades(3)
     
     def get_random_upgrades(self, count):
         """Возвращает случайные улучшения для выбора"""
