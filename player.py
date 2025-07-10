@@ -129,6 +129,11 @@ class Player(pygame.sprite.Sprite):
         self.walk_sound_playing = False
         self.walk_sound_cooldown = 300  # миллисекунды между воспроизведениями звука ходьбы
         self.last_walk_sound_time = 0
+        
+        # --- Система изменения цвета при получении урона ---
+        self.damage_flash_timer = 0
+        self.damage_flash_duration = 200  # миллисекунды красного цвета
+        self.is_flashing_red = False
 
     def move(self, dx=0, dy=0):
         # Новые координаты после перемещения
@@ -329,6 +334,12 @@ class Player(pygame.sprite.Sprite):
         # Обновляем позицию rect
         self.rect.x = self.x
         self.rect.y = self.y
+        
+        # --- Обновление красного цвета при получении урона ---
+        if self.is_flashing_red:
+            current_time = pygame.time.get_ticks()
+            if current_time - self.damage_flash_timer > self.damage_flash_duration:
+                self.is_flashing_red = False
     
     def take_damage(self, amount):
         """Take damage with dodge chance"""
@@ -336,6 +347,10 @@ class Player(pygame.sprite.Sprite):
             return  # Dodge the attack
         self.health -= amount
         self.health = max(0, self.health)
+        
+        # Активируем красный цвет при получении урона
+        self.is_flashing_red = True
+        self.damage_flash_timer = pygame.time.get_ticks()
     
     def heal(self, amount):
         """Restore health"""
@@ -420,7 +435,17 @@ class Player(pygame.sprite.Sprite):
                 surface.blit(self.magic_carrots_image, rect)
         # Затем рисуем самого игрока
         player_rect_on_screen = camera.apply(self)
-        surface.blit(self.image, player_rect_on_screen)
+        
+        # Применяем красный цвет если игрок получил урон
+        if self.is_flashing_red:
+            # Создаем красную версию изображения
+            red_surface = pygame.Surface(self.image.get_size(), pygame.SRCALPHA)
+            red_surface.fill((255, 0, 0, 128))  # Красный цвет с прозрачностью
+            temp_image = self.image.copy()
+            temp_image.blit(red_surface, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
+            surface.blit(temp_image, player_rect_on_screen)
+        else:
+            surface.blit(self.image, player_rect_on_screen)
         # Рисуем полосу здоровья под игроком
         from utils import draw_health_bar
         bar_width = 40
