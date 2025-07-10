@@ -29,6 +29,7 @@ try:
     menu_start_btn = pygame.image.load("assets/menu/menu_start.png").convert_alpha()
     menu_settings_btn = pygame.image.load("assets/menu/menu_settings.png").convert_alpha()
     menu_leave_btn = pygame.image.load("assets/menu/menu_leave.png").convert_alpha()
+    menu_back_btn = pygame.image.load("assets/menu/button_back.png").convert_alpha()
 except pygame.error as e:
     print(f"Ошибка загрузки изображений меню: {e}")
     # Создаём заглушки если изображения не найдены
@@ -42,6 +43,8 @@ except pygame.error as e:
     menu_settings_btn.fill((255, 255, 0))
     menu_leave_btn = pygame.Surface((200, 60))
     menu_leave_btn.fill((255, 0, 0))
+    menu_back_btn = pygame.Surface((200, 60))
+    menu_back_btn.fill((100, 100, 100))
 
 # Загрузка звука наведения на кнопки меню
 try:
@@ -53,7 +56,7 @@ except pygame.error as e:
 
 # Масштабирование изображений под размер экрана
 def scale_menu_images():
-    global menu_background, menu_title, menu_start_btn, menu_settings_btn, menu_leave_btn
+    global menu_background, menu_title, menu_start_btn, menu_settings_btn, menu_leave_btn, menu_back_btn
     # Масштабируем фоновое изображение
     menu_background = pygame.transform.scale(menu_background, (WIDTH, HEIGHT))
     # Масштабируем заголовок (примерно 1/3 ширины экрана)
@@ -66,6 +69,7 @@ def scale_menu_images():
     menu_start_btn = pygame.transform.scale(menu_start_btn, (btn_width, btn_height))
     menu_settings_btn = pygame.transform.scale(menu_settings_btn, (btn_width, btn_height))
     menu_leave_btn = pygame.transform.scale(menu_leave_btn, (btn_width, btn_height))
+    menu_back_btn = pygame.transform.scale(menu_back_btn, (btn_width, btn_height))
 
 scale_menu_images()
 
@@ -81,6 +85,7 @@ class MenuManager:
         # Отслеживание наведения мыши на кнопки
         self.last_hovered_button = None
         self.hovered_button = None  # Текущая кнопка под курсором
+        self.back_button_hovered = False  # Для кнопки "Назад" в настройках
     
     def update_slider_handle_position(self):
         """Обновляет позицию ручки слайдера в соответствии с текущей громкостью"""
@@ -141,8 +146,11 @@ class MenuManager:
                 # Если кликнули по слайдеру, а не по ручке, сразу обновляем позицию
                 if not self.slider_handle_rect.collidepoint(adjusted_pos):
                     self.update_volume_from_mouse_pos(adjusted_pos[0])
-            # Кнопка "Назад"
-            back_rect = pygame.Rect(WIDTH // 2 - 50, HEIGHT // 2 + 150, 100, 40)
+            # Кнопка "Назад" (используем изображение)
+            back_scale = 0.9 if self.back_button_hovered else 1.0
+            back_width = int(menu_back_btn.get_width() * back_scale)
+            back_height = int(menu_back_btn.get_height() * back_scale)
+            back_rect = pygame.Rect(WIDTH // 2 - back_width // 2, HEIGHT // 2 + 200 - back_height // 2, back_width, back_height)
             if back_rect.collidepoint(adjusted_pos):
                 self.state = 'main'
                 return None
@@ -220,10 +228,27 @@ class MenuManager:
         # Проверяем наведение на кнопки
         self.check_button_hover(pos)
         
-        if self.state == 'settings' and self.dragging_slider:
-            # Обновляем громкость на основе позиции мыши
+        if self.state == 'settings':
             adjusted_pos = self.adjust_mouse_pos(pos)
-            self.update_volume_from_mouse_pos(adjusted_pos[0])
+            
+            # Проверяем наведение на кнопку "Назад"
+            back_scale = 0.9 if self.back_button_hovered else 1.0
+            back_width = int(menu_back_btn.get_width() * back_scale)
+            back_height = int(menu_back_btn.get_height() * back_scale)
+            back_rect = pygame.Rect(WIDTH // 2 - back_width // 2, HEIGHT // 2 + 200 - back_height // 2, back_width, back_height)
+            
+            new_back_hovered = back_rect.collidepoint(adjusted_pos)
+            if new_back_hovered != self.back_button_hovered:
+                self.back_button_hovered = new_back_hovered
+                if new_back_hovered and menu_hover_sound:
+                    # Применяем коэффициент громкости
+                    volume_multiplier = get_volume_multiplier()
+                    menu_hover_sound.set_volume(0.3 * volume_multiplier)
+                    menu_hover_sound.play()
+            
+            if self.dragging_slider:
+                # Обновляем громкость на основе позиции мыши
+                self.update_volume_from_mouse_pos(adjusted_pos[0])
     
     def handle_mouse_up(self):
         self.dragging_slider = False
@@ -310,12 +335,13 @@ class MenuManager:
         value_rect = volume_value.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 80))
         surface.blit(volume_value, value_rect)
         
-        # Кнопка "Назад"
-        back_rect = pygame.Rect(WIDTH // 2 - 50, HEIGHT // 2 + 150, 100, 40)
-        pygame.draw.rect(surface, (100, 100, 100), back_rect)
-        back_text = font_small.render('Назад', True, (255, 255, 255))
-        back_text_rect = back_text.get_rect(center=back_rect.center)
-        surface.blit(back_text, back_text_rect)
+        # Кнопка "Назад" (используем изображение)
+        back_scale = 0.9 if self.back_button_hovered else 1.0
+        back_scaled = pygame.transform.scale(menu_back_btn, 
+            (int(menu_back_btn.get_width() * back_scale), 
+             int(menu_back_btn.get_height() * back_scale)))
+        back_rect = back_scaled.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 200))
+        surface.blit(back_scaled, back_rect)
 
 def toggle_fullscreen():
     global screen, fullscreen
