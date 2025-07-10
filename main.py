@@ -271,6 +271,8 @@ class MenuManager:
         surface.blit(leave_scaled, leave_rect)
     
     def draw_settings_menu(self, surface):
+        # Сначала рисуем тот же фон, что и в главном меню
+        surface.blit(menu_background, (0, 0))
         # Полупрозрачный фон
         overlay = pygame.Surface((WIDTH, HEIGHT))
         overlay.set_alpha(180)
