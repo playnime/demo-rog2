@@ -221,7 +221,7 @@ class UpgradeManager:
             return
         
         font = pygame.font.SysFont(None, 24)
-        progress_text = font.render(f"Уровень: {self.level} | Убийств до улучшения: {self.current_kills}/{self.kills_until_upgrade}", True, (255, 255, 255))
+        progress_text = font.render(f"Уровень: {self.level} | Морковок до улучшения: {self.current_kills}/{self.kills_until_upgrade}", True, (255, 255, 255))
         screen.blit(progress_text, (10, 60))
         
         # Прогресс-бар
