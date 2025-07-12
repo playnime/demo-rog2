@@ -201,15 +201,16 @@ class Enemy(pygame.sprite.Sprite):
 class BasicEnemy(Enemy):
     def __init__(self, game, x, y):
         level = getattr(game.upgrade_manager, 'level', 1)
-        hp = 50 + int(level * 3)
-        dmg = (5 + int(level * 0.5)) // 2  # Уменьшаем урон в 2 раза
-        super().__init__(game, x, y, "assets/basic_gryavol.png", 1.5 / 2, hp, dmg, 500, (255, 255, 255))  # Уменьшаем скорость в 2 раза
+        # Старые статы коровы - теперь для гремлинов
+        hp = 400 + int(level * 20)
+        dmg = (40 + int(level * 4)) // 2  # Уменьшаем урон в 2 раза
+        super().__init__(game, x, y, "assets/basic_gryavol.png", 1.8 / 2, hp, dmg, 900, (255, 255, 255))  # Уменьшаем скорость в 2 раза
 
     def kill(self):
         # Спавним морковки на позиции врага
-        for _ in range(1):  # 1 морковка для остальных врагов
-            offset_x = random.randint(-10, 10)
-            offset_y = random.randint(-10, 10)
+        for _ in range(5):  # 5 морковок для сильных гремлинов
+            offset_x = random.randint(-20, 20)
+            offset_y = random.randint(-20, 20)
             carrot = Carrot(self.game, self.rect.centerx + offset_x, self.rect.centery + offset_y)
             self.game.carrots.add(carrot)
         super().kill()
@@ -217,15 +218,16 @@ class BasicEnemy(Enemy):
 class FastEnemy(Enemy):
     def __init__(self, game, x, y):
         level = getattr(game.upgrade_manager, 'level', 1)
-        hp = 30 + int(level * 2)
-        dmg = (3 + int(level * 0.3)) // 2  # Уменьшаем урон в 2 раза
-        super().__init__(game, x, y, "assets/basic_yeti.png", 2.5 / 2, hp, dmg, 400, (100, 200, 255))  # Уменьшаем скорость в 2 раза
+        # Старые статы коровы - теперь для быстрых гремлинов
+        hp = 400 + int(level * 20)
+        dmg = (40 + int(level * 4)) // 2  # Уменьшаем урон в 2 раза
+        super().__init__(game, x, y, "assets/basic_yeti.png", 2.5 / 2, hp, dmg, 900, (100, 200, 255))  # Уменьшаем скорость в 2 раза
 
     def kill(self):
         # Спавним морковки на позиции врага
-        for _ in range(1):  # 1 морковка для остальных врагов
-            offset_x = random.randint(-10, 10)
-            offset_y = random.randint(-10, 10)
+        for _ in range(5):  # 5 морковок для сильных гремлинов
+            offset_x = random.randint(-20, 20)
+            offset_y = random.randint(-20, 20)
             carrot = Carrot(self.game, self.rect.centerx + offset_x, self.rect.centery + offset_y)
             self.game.carrots.add(carrot)
         super().kill()
@@ -384,10 +386,10 @@ class CowEnemy(Enemy):
     def __init__(self, game, x, y, color_variant=0):
         # color_variant: 0 — обычная, 1 — тёмная, 2 — красная
         level = getattr(game.upgrade_manager, 'level', 1)
-        # Характеристики как у кабана, но быстрее
-        hp = 400 + int(level * 20)
-        dmg = (40 + int(level * 4)) // 2  # Уменьшаем урон в 2 раза
-        speed = 1.8 / 2  # Уменьшаем скорость в 2 раза
+        # Старые статы гремлинов - теперь для коров
+        hp = 50 + int(level * 3)
+        dmg = (5 + int(level * 0.5)) // 2  # Уменьшаем урон в 2 раза
+        speed = 1.5 / 2  # Уменьшаем скорость в 2 раза
         animation_frames = [
             "assets/cow-anim1.png",
             "assets/cow-anim2.png", 
@@ -396,13 +398,13 @@ class CowEnemy(Enemy):
         # Цветовые оттенки для трёх вариантов
         tints = [None, (60, 60, 60), (200, 50, 50)]
         tint = tints[color_variant % 3]
-        super().__init__(game, x, y, None, speed, hp, dmg, 900, tint, animation_frames, 250)
+        super().__init__(game, x, y, None, speed, hp, dmg, 500, tint, animation_frames, 250)
 
     def kill(self):
         # Спавним морковки на позиции врага
-        for _ in range(5):  # 5 морковок для коров
-            offset_x = random.randint(-20, 20)
-            offset_y = random.randint(-20, 20)
+        for _ in range(1):  # 1 морковка для слабых коров
+            offset_x = random.randint(-10, 10)
+            offset_y = random.randint(-10, 10)
             carrot = Carrot(self.game, self.rect.centerx + offset_x, self.rect.centery + offset_y)
             self.game.carrots.add(carrot)
         super().kill()

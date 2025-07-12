@@ -384,9 +384,7 @@ class Game:
         self.player = Player(self, player_x, player_y)
         self.all_sprites.add(self.player)
         self.camera = Camera(WIDTH, HEIGHT)
-        self.enemy = BasicEnemy(self, 5, 5)
-        self.all_sprites.add(self.enemy)
-        self.enemies.add(self.enemy)
+        # Убираем создание гремлина при инициализации - враги будут спавниться только через spawn_enemy()
         self.last_spawn_time = pygame.time.get_ticks()
         self.camera.update(self.player)
         # Reset upgrade system
@@ -419,35 +417,36 @@ class Game:
         # Выбираем тип врага в зависимости от уровня
         level = self.upgrade_manager.level
         if level == 1:
-            enemy_types = [BasicEnemy, FastEnemy]
+            enemy_types = [lambda g, x, y: CowEnemy(g, x, y, 0)]  # Коровы в начале
         elif level == 2:
-            enemy_types = [BasicEnemy, FastEnemy, FoxEnemy, SheepEnemy]
+            enemy_types = [lambda g, x, y: CowEnemy(g, x, y, 0), lambda g, x, y: CowEnemy(g, x, y, 1)]
         elif level == 3 or level == 4:
-            enemy_types = [BasicEnemy, FastEnemy, FoxEnemy, SheepEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 0), PigEnemy]
+            enemy_types = [lambda g, x, y: CowEnemy(g, x, y, 0), lambda g, x, y: CowEnemy(g, x, y, 1), lambda g, x, y: CowEnemy(g, x, y, 2), FoxEnemy, SheepEnemy]
         elif level == 5:
-            enemy_types = [BasicEnemy, FastEnemy, FoxEnemy, SheepEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 0), PigEnemy, RedFoxEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 2)]
+            enemy_types = [lambda g, x, y: CowEnemy(g, x, y, 0), lambda g, x, y: CowEnemy(g, x, y, 1), lambda g, x, y: CowEnemy(g, x, y, 2), FoxEnemy, SheepEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 0), PigEnemy]
         elif level == 6:
-            enemy_types = [BasicEnemy, FastEnemy, FoxEnemy, SheepEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 0), PigEnemy, RedFoxEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 2), BlackFoxEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 1), lambda g, x, y: LamaEnemy(g, x, y, 0)]
+            enemy_types = [lambda g, x, y: CowEnemy(g, x, y, 0), lambda g, x, y: CowEnemy(g, x, y, 1), lambda g, x, y: CowEnemy(g, x, y, 2), FoxEnemy, SheepEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 0), PigEnemy, RedFoxEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 2)]
         elif level == 7:
-            enemy_types = [BasicEnemy, FastEnemy, FoxEnemy, SheepEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 0), PigEnemy, RedFoxEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 2), BlackFoxEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 1), lambda g, x, y: LamaEnemy(g, x, y, 0), lambda g, x, y: LamaEnemy(g, x, y, 2)]
+            enemy_types = [lambda g, x, y: CowEnemy(g, x, y, 0), lambda g, x, y: CowEnemy(g, x, y, 1), lambda g, x, y: CowEnemy(g, x, y, 2), FoxEnemy, SheepEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 0), PigEnemy, RedFoxEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 2), BlackFoxEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 1), lambda g, x, y: LamaEnemy(g, x, y, 0)]
         elif level == 8:
-            enemy_types = [BasicEnemy, FastEnemy, FoxEnemy, SheepEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 0), PigEnemy, RedFoxEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 2), BlackFoxEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 1), lambda g, x, y: LamaEnemy(g, x, y, 0), lambda g, x, y: LamaEnemy(g, x, y, 2)]
+            enemy_types = [lambda g, x, y: CowEnemy(g, x, y, 0), lambda g, x, y: CowEnemy(g, x, y, 1), lambda g, x, y: CowEnemy(g, x, y, 2), FoxEnemy, SheepEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 0), PigEnemy, RedFoxEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 2), BlackFoxEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 1), lambda g, x, y: LamaEnemy(g, x, y, 0), lambda g, x, y: LamaEnemy(g, x, y, 2)]
         elif level == 9:
-            enemy_types = [BasicEnemy, FastEnemy, FoxEnemy, SheepEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 0), PigEnemy, RedFoxEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 2), BlackFoxEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 1), lambda g, x, y: LamaEnemy(g, x, y, 0), lambda g, x, y: LamaEnemy(g, x, y, 2), lambda g, x, y: LamaEnemy(g, x, y, 1)]
+            enemy_types = [lambda g, x, y: CowEnemy(g, x, y, 0), lambda g, x, y: CowEnemy(g, x, y, 1), lambda g, x, y: CowEnemy(g, x, y, 2), FoxEnemy, SheepEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 0), PigEnemy, RedFoxEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 2), BlackFoxEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 1), lambda g, x, y: LamaEnemy(g, x, y, 0), lambda g, x, y: LamaEnemy(g, x, y, 2), lambda g, x, y: LamaEnemy(g, x, y, 1)]
         elif level == 10:
-            enemy_types = [BasicEnemy, FastEnemy, FoxEnemy, SheepEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 0), PigEnemy, RedFoxEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 2), BlackFoxEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 1), lambda g, x, y: LamaEnemy(g, x, y, 0), lambda g, x, y: LamaEnemy(g, x, y, 2), lambda g, x, y: LamaEnemy(g, x, y, 1)]
+            enemy_types = [lambda g, x, y: CowEnemy(g, x, y, 0), lambda g, x, y: CowEnemy(g, x, y, 1), lambda g, x, y: CowEnemy(g, x, y, 2), FoxEnemy, SheepEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 0), PigEnemy, RedFoxEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 2), BlackFoxEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 1), lambda g, x, y: LamaEnemy(g, x, y, 0), lambda g, x, y: LamaEnemy(g, x, y, 2), lambda g, x, y: LamaEnemy(g, x, y, 1)]
         elif level == 11:
-            enemy_types = [BasicEnemy, FastEnemy, FoxEnemy, SheepEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 0), PigEnemy, RedFoxEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 2), BlackFoxEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 1), lambda g, x, y: LamaEnemy(g, x, y, 0), lambda g, x, y: LamaEnemy(g, x, y, 2), lambda g, x, y: LamaEnemy(g, x, y, 1), lambda g, x, y: BoarEnemy(g, x, y, 0)]
+            enemy_types = [lambda g, x, y: CowEnemy(g, x, y, 0), lambda g, x, y: CowEnemy(g, x, y, 1), lambda g, x, y: CowEnemy(g, x, y, 2), FoxEnemy, SheepEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 0), PigEnemy, RedFoxEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 2), BlackFoxEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 1), lambda g, x, y: LamaEnemy(g, x, y, 0), lambda g, x, y: LamaEnemy(g, x, y, 2), lambda g, x, y: LamaEnemy(g, x, y, 1), lambda g, x, y: BoarEnemy(g, x, y, 0)]
         elif level == 12:
-            enemy_types = [BasicEnemy, FastEnemy, FoxEnemy, SheepEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 0), PigEnemy, RedFoxEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 2), BlackFoxEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 1), lambda g, x, y: LamaEnemy(g, x, y, 0), lambda g, x, y: LamaEnemy(g, x, y, 2), lambda g, x, y: LamaEnemy(g, x, y, 1), lambda g, x, y: BoarEnemy(g, x, y, 0)]
+            enemy_types = [lambda g, x, y: CowEnemy(g, x, y, 0), lambda g, x, y: CowEnemy(g, x, y, 1), lambda g, x, y: CowEnemy(g, x, y, 2), FoxEnemy, SheepEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 0), PigEnemy, RedFoxEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 2), BlackFoxEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 1), lambda g, x, y: LamaEnemy(g, x, y, 0), lambda g, x, y: LamaEnemy(g, x, y, 2), lambda g, x, y: LamaEnemy(g, x, y, 1), lambda g, x, y: BoarEnemy(g, x, y, 0)]
         elif level == 13:
-            enemy_types = [FoxEnemy, SheepEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 0), PigEnemy, RedFoxEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 2), BlackFoxEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 1), lambda g, x, y: LamaEnemy(g, x, y, 0), lambda g, x, y: LamaEnemy(g, x, y, 2), lambda g, x, y: LamaEnemy(g, x, y, 1), lambda g, x, y: BoarEnemy(g, x, y, 0), lambda g, x, y: BoarEnemy(g, x, y, 1), lambda g, x, y: BoarEnemy(g, x, y, 2)]
+            enemy_types = [lambda g, x, y: CowEnemy(g, x, y, 0), lambda g, x, y: CowEnemy(g, x, y, 1), lambda g, x, y: CowEnemy(g, x, y, 2), FoxEnemy, SheepEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 0), PigEnemy, RedFoxEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 2), BlackFoxEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 1), lambda g, x, y: LamaEnemy(g, x, y, 0), lambda g, x, y: LamaEnemy(g, x, y, 2), lambda g, x, y: LamaEnemy(g, x, y, 1), lambda g, x, y: BoarEnemy(g, x, y, 0), lambda g, x, y: BoarEnemy(g, x, y, 1), lambda g, x, y: BoarEnemy(g, x, y, 2)]
         elif level == 14:
-            enemy_types = [SheepEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 0), PigEnemy, RedFoxEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 2), BlackFoxEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 1), lambda g, x, y: LamaEnemy(g, x, y, 0), lambda g, x, y: LamaEnemy(g, x, y, 2), lambda g, x, y: LamaEnemy(g, x, y, 1), lambda g, x, y: BoarEnemy(g, x, y, 0), lambda g, x, y: BoarEnemy(g, x, y, 1), lambda g, x, y: BoarEnemy(g, x, y, 2)]
+            enemy_types = [lambda g, x, y: CowEnemy(g, x, y, 0), lambda g, x, y: CowEnemy(g, x, y, 1), lambda g, x, y: CowEnemy(g, x, y, 2), SheepEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 0), PigEnemy, RedFoxEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 2), BlackFoxEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 1), lambda g, x, y: LamaEnemy(g, x, y, 0), lambda g, x, y: LamaEnemy(g, x, y, 2), lambda g, x, y: LamaEnemy(g, x, y, 1), lambda g, x, y: BoarEnemy(g, x, y, 0), lambda g, x, y: BoarEnemy(g, x, y, 1), lambda g, x, y: BoarEnemy(g, x, y, 2)]
         elif level == 15:
-            enemy_types = [SheepEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 0), PigEnemy, RedFoxEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 2), BlackFoxEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 1), lambda g, x, y: LamaEnemy(g, x, y, 0), lambda g, x, y: LamaEnemy(g, x, y, 2), lambda g, x, y: LamaEnemy(g, x, y, 1), lambda g, x, y: BoarEnemy(g, x, y, 0), lambda g, x, y: BoarEnemy(g, x, y, 1), lambda g, x, y: BoarEnemy(g, x, y, 2)]
+            enemy_types = [lambda g, x, y: CowEnemy(g, x, y, 0), lambda g, x, y: CowEnemy(g, x, y, 1), lambda g, x, y: CowEnemy(g, x, y, 2), SheepEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 0), PigEnemy, RedFoxEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 2), BlackFoxEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 1), lambda g, x, y: LamaEnemy(g, x, y, 0), lambda g, x, y: LamaEnemy(g, x, y, 2), lambda g, x, y: LamaEnemy(g, x, y, 1), lambda g, x, y: BoarEnemy(g, x, y, 0), lambda g, x, y: BoarEnemy(g, x, y, 1), lambda g, x, y: BoarEnemy(g, x, y, 2)]
         elif level == 16:
-            enemy_types = [SheepEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 0), PigEnemy, RedFoxEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 2), BlackFoxEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 1), lambda g, x, y: LamaEnemy(g, x, y, 0), lambda g, x, y: LamaEnemy(g, x, y, 2), lambda g, x, y: LamaEnemy(g, x, y, 1), lambda g, x, y: BoarEnemy(g, x, y, 0), lambda g, x, y: BoarEnemy(g, x, y, 1), lambda g, x, y: BoarEnemy(g, x, y, 2), lambda g, x, y: CowEnemy(g, x, y, 0), lambda g, x, y: CowEnemy(g, x, y, 1), lambda g, x, y: CowEnemy(g, x, y, 2)]
+            # Начинаем добавлять сильных гремлинов
+            enemy_types = [BasicEnemy, FastEnemy, SheepEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 0), PigEnemy, RedFoxEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 2), BlackFoxEnemy, lambda g, x, y: ChickenEnemy(g, x, y, 1), lambda g, x, y: LamaEnemy(g, x, y, 0), lambda g, x, y: LamaEnemy(g, x, y, 2), lambda g, x, y: LamaEnemy(g, x, y, 1), lambda g, x, y: BoarEnemy(g, x, y, 0), lambda g, x, y: BoarEnemy(g, x, y, 1), lambda g, x, y: BoarEnemy(g, x, y, 2)]
         else:
             # Добавляем курицу (три варианта) в пул врагов
             enemy_types = [BasicEnemy, FastEnemy, StrongEnemy, FoxEnemy, BlackFoxEnemy, RedFoxEnemy,
