@@ -641,7 +641,6 @@ class Game:
             self.upgrade_manager.draw_progress(game_surface)
             self.upgrade_manager.draw_upgrade_screen(game_surface)
             self.draw_notification(game_surface)
-            self.draw_fps(game_surface, clock)
             # Menu
             if self.state == 'menu':
                 self.menu_manager.draw(game_surface)
